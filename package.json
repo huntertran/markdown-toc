@@ -1,154 +1,152 @@
 {
-    "name": "auto-markdown-toc",
-    "displayName": "Auto Markdown TOC",
-    "description": "Markdown TOC (Table Of Contents) Plugin for Visual Studio Code.",
-    "version": "2.1.1",
-    "icon": "img/markdown-toc.png",
-    "license": "MIT",
-    "author": {
-        "email": "hunter.tran.92@gmail.com",
-        "name": "Hunter Tran",
-        "url": "https://coding4food.net/"
-    },
-    "bugs": {
-        "url": "https://github.com/huntertran/markdown-toc/issues"
-    },
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/huntertran/markdown-toc.git"
-    },
-    "keywords": [
-        "markdown",
-        "toc"
+  "name": "auto-markdown-toc",
+  "displayName": "Auto Markdown TOC",
+  "description": "Markdown TOC (Table Of Contents) Plugin for Visual Studio Code.",
+  "version": "2.1.2",
+  "icon": "img/markdown-toc.png",
+  "license": "MIT",
+  "author": {
+    "name": "Xavier Guarch"
+  },
+  "bugs": {
+    "url": "https://github.com/xavierguarch/markdown-toc/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/xavierguarch/markdown-toc.git"
+  },
+  "keywords": [
+    "markdown",
+    "toc"
+  ],
+  "homepage": "https://github.com/xavierguarch/markdown-toc",
+  "publisher": "xavierguarch",
+  "engines": {
+    "vscode": "^1.34.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onLanguage:markdown"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "extension.updateMarkdownToc",
+        "title": "Auto Markdown TOC: Insert/Update"
+      },
+      {
+        "command": "extension.deleteMarkdownToc",
+        "title": "Auto Markdown TOC: Delete"
+      },
+      {
+        "command": "extension.updateMarkdownSections",
+        "title": "Auto Markdown Sections: Insert/Update"
+      },
+      {
+        "command": "extension.deleteMarkdownSections",
+        "title": "Auto Markdown Sections: Delete"
+      }
     ],
-    "homepage": "https://github.com/huntertran/markdown-toc",
-    "publisher": "huntertran",
-    "engines": {
-        "vscode": "^1.34.0"
-    },
-    "categories": [
-        "Other"
-    ],
-    "activationEvents": [
-        "onLanguage:markdown"
-    ],
-    "main": "./out/extension.js",
-    "contributes": {
-        "commands": [
-            {
-                "command": "extension.updateMarkdownToc",
-                "title": "Auto Markdown TOC: Insert/Update"
-            },
-            {
-                "command": "extension.deleteMarkdownToc",
-                "title": "Auto Markdown TOC: Delete"
-            },
-            {
-                "command": "extension.updateMarkdownSections",
-                "title": "Auto Markdown Sections: Insert/Update"
-            },
-            {
-                "command": "extension.deleteMarkdownSections",
-                "title": "Auto Markdown Sections: Delete"
-            }
-        ],
-        "menus": {
-            "editor/context": [
-                {
-                    "when": "editorLangId == 'markdown'",
-                    "command": "extension.updateMarkdownToc"
-                },
-                {
-                    "when": "editorLangId == 'markdown'",
-                    "command": "extension.deleteMarkdownToc"
-                },
-                {
-                    "when": "editorLangId == 'markdown'",
-                    "command": "extension.updateMarkdownSections"
-                },
-                {
-                    "when": "editorLangId == 'markdown'",
-                    "command": "extension.deleteMarkdownSections"
-                }
-            ]
+    "menus": {
+      "editor/context": [
+        {
+          "when": "editorLangId == 'markdown'",
+          "command": "extension.updateMarkdownToc"
         },
-        "keybindings": [
-            {
-                "command": "extension.updateMarkdownToc",
-                "key": "ctrl+m t"
-            },
-            {
-                "command": "extension.updateMarkdownSections",
-                "key": "ctrl+m s"
-            }
-        ],
-        "configuration": {
-            "type": "object",
-            "title": "Markdown TOC configuration",
-            "properties": {
-                "markdown-toc.depthFrom": {
-                    "type": "number",
-                    "default": 1,
-                    "description": "Depth control [1-6]."
-                },
-                "markdown-toc.depthTo": {
-                    "type": "number",
-                    "default": 6,
-                    "description": "Depth control [1-6]."
-                },
-                "markdown-toc.insertAnchor": {
-                    "type": "boolean",
-                    "default": false,
-                    "description": "Auto insert anchor for link."
-                },
-                "markdown-toc.withLinks": {
-                    "type": "boolean",
-                    "default": true,
-                    "description": "Auto insert link."
-                },
-                "markdown-toc.orderedList": {
-                    "type": "boolean",
-                    "default": false,
-                    "description": "Use ordered list (1. ..., 2. ...)."
-                },
-                "markdown-toc.bulletCharacter": {
-                    "type": "string",
-                    "default": "-",
-                    "description": "Bullet character for TOC"
-                },
-                "markdown-toc.updateOnSave": {
-                    "type": "boolean",
-                    "default": true,
-                    "description": "Auto update on save."
-                },
-                "markdown-toc.anchorMode": {
-                    "type": "string",
-                    "default": "github.com",
-                    "description": "anchor mode.",
-                    "enum": [
-                        "github.com",
-                        "bitbucket.org",
-                        "ghost.org",
-                        "gitlab.com"
-                    ]
-                }
-            }
+        {
+          "when": "editorLangId == 'markdown'",
+          "command": "extension.deleteMarkdownToc"
+        },
+        {
+          "when": "editorLangId == 'markdown'",
+          "command": "extension.updateMarkdownSections"
+        },
+        {
+          "when": "editorLangId == 'markdown'",
+          "command": "extension.deleteMarkdownSections"
         }
+      ]
     },
-    "scripts": {
-        "vscode:prepublish": "npm run compile",
-        "compile": "tsc -p ./",
-        "lint": "tslint -p ./",
-        "watch": "tsc -watch -p ./"
-    },
-    "dependencies": {
-        "anchor-markdown-header": "^0.5.7"
-    },
-    "devDependencies": {
-        "anchor-markdown-header": "^0.5.7",
-        "@types/node": "^8.10.25",
-        "@types/vscode": "^1.34.0",
-        "tslint": "^5.16.0",
-        "typescript": "^3.5.1"
+    "keybindings": [
+      {
+        "command": "extension.updateMarkdownToc",
+        "key": "ctrl+m t"
+      },
+      {
+        "command": "extension.updateMarkdownSections",
+        "key": "ctrl+m s"
+      }
+    ],
+    "configuration": {
+      "type": "object",
+      "title": "Markdown TOC configuration",
+      "properties": {
+        "markdown-toc.depthFrom": {
+          "type": "number",
+          "default": 1,
+          "description": "Depth control [1-6]."
+        },
+        "markdown-toc.depthTo": {
+          "type": "number",
+          "default": 6,
+          "description": "Depth control [1-6]."
+        },
+        "markdown-toc.insertAnchor": {
+          "type": "boolean",
+          "default": false,
+          "description": "Auto insert anchor for link."
+        },
+        "markdown-toc.withLinks": {
+          "type": "boolean",
+          "default": true,
+          "description": "Auto insert link."
+        },
+        "markdown-toc.orderedList": {
+          "type": "boolean",
+          "default": false,
+          "description": "Use ordered list (1. ..., 2. ...)."
+        },
+        "markdown-toc.bulletCharacter": {
+          "type": "string",
+          "default": "-",
+          "description": "Bullet character for TOC"
+        },
+        "markdown-toc.updateOnSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "Auto update on save."
+        },
+        "markdown-toc.anchorMode": {
+          "type": "string",
+          "default": "github.com",
+          "description": "anchor mode.",
+          "enum": [
+            "github.com",
+            "bitbucket.org",
+            "ghost.org",
+            "gitlab.com"
+          ]
+        }
+      }
     }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "lint": "tslint -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "dependencies": {
+    "anchor-markdown-header": "^0.5.7"
+  },
+  "devDependencies": {
+    "anchor-markdown-header": "^0.5.7",
+    "@types/node": "^8.10.25",
+    "@types/vscode": "^1.34.0",
+    "tslint": "^5.16.0",
+    "typescript": "^3.5.1"
+  }
 }

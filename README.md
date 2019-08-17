@@ -1,4 +1,7 @@
 # Auto Markdown TOC
+
+WARNING: This is just a temporal fork to fix a bug in the original [huntertran.auto-markdown-toc](https://github.com/huntertran/markdown-toc) extension when inserting the anchors for headers. This extension places the anchors **before** the header. The original extension places them after the header, making them unusable in Bitbucket.
+
 Generate TOC (table of contents) of headlines from parsed [markdown](https://en.wikipedia.org/wiki/Markdown) file.
 
 <!-- TOC depthFrom:2 -->
@@ -6,11 +9,11 @@ Generate TOC (table of contents) of headlines from parsed [markdown](https://en.
 - [1. Features](#1-features)
 - [2. Installation](#2-installation)
 - [3. Usage](#3-usage)
-    - [3.1. Insert TOC](#31-insert-toc)
-    - [3.2. Insert Header Number Sections](#32-insert-header-number-sections)
+  - [3.1. Insert TOC](#31-insert-toc)
+  - [3.2. Insert Header Number Sections](#32-insert-header-number-sections)
 - [4. Configuration](#4-configuration)
-    - [4.1. Default Settings](#41-default-settings)
-    - [4.2. Unique Settings](#42-unique-settings)
+  - [4.1. Default Settings](#41-default-settings)
+  - [4.2. Unique Settings](#42-unique-settings)
 - [5. Contributors](#5-contributors)
 - [6. What's New?](#6-whats-new)
 - [7. Authors](#7-authors)
@@ -20,6 +23,7 @@ Generate TOC (table of contents) of headlines from parsed [markdown](https://en.
 <!-- /TOC -->
 
 ## 1. Features
+
 - Insert header number sections.
 - Auto active plugin on markdown
 - Insert anchor for header `<a id="markdown-header" name="header"></a>`
@@ -31,54 +35,63 @@ Generate TOC (table of contents) of headlines from parsed [markdown](https://en.
 - Anchor support for (github.com|nodejs.org|bitbucket.org|ghost.org|gitlab.com).
 
 ## 2. Installation
-```
+
+```bash
 ext install auto-markdown-toc
 ```
 
 ## 3. Usage
+
 ### 3.1. Insert TOC
+
 ![Insert TOC](img/insert-toc.gif)
 
 ### 3.2. Insert Header Number Sections
+
 **Tips:Section of header is begin with depthFrom**
 
 ![Insert Header Number Sections](img/inser-header-number-sections.gif)
 
 ## 4. Configuration
-|attributes|values|defaults|
-|---|---|---|
-|depthFrom|uint(1-6)|1|
-|depthTo|uint(1-6)|6|
-|bulletCharacter|string|"-"|
-|insertAnchor|bool|false|
-|withLinks|bool|true|
-|orderedList|bool|false|
-|updateOnSave|bool|true|
-|anchorMode|github.com/bitbucket.org/ghost.org/gitlab.com|github.com|
+
+| attributes      | values                                        | defaults   |
+| --------------- | --------------------------------------------- | ---------- |
+| depthFrom       | uint(1-6)                                     | 1          |
+| depthTo         | uint(1-6)                                     | 6          |
+| bulletCharacter | string                                        | "-"        |
+| insertAnchor    | bool                                          | false      |
+| withLinks       | bool                                          | true       |
+| orderedList     | bool                                          | false      |
+| updateOnSave    | bool                                          | true       |
+| anchorMode      | github.com/bitbucket.org/ghost.org/gitlab.com | github.com |
 
 ### 4.1. Default Settings
+
 To change the default configuration settings for the `Auto Markdown TOC` extension, edit the user or workspace settings as described here. The available settings are as follows:
 
-|attributes|values|defaults|
-|---|---|---|
-|markdown-toc.depthFrom|number(1-6)|1|
-|markdown-toc.depthTo|number(1-6)|6|
-|markdown-toc.bulletCharacter|string|"-"|
-|markdown-toc.insertAnchor|bool|false|
-|markdown-toc.withLinks|bool|true|
-|markdown-toc.orderedList|bool|false|
-|markdown-toc.updateOnSave|bool|true|
-|markdown-toc.anchorMode|enum|github.com|
+| attributes                   | values      | defaults   |
+| ---------------------------- | ----------- | ---------- |
+| markdown-toc.depthFrom       | number(1-6) | 1          |
+| markdown-toc.depthTo         | number(1-6) | 6          |
+| markdown-toc.bulletCharacter | string      | "-"        |
+| markdown-toc.insertAnchor    | bool        | false      |
+| markdown-toc.withLinks       | bool        | true       |
+| markdown-toc.orderedList     | bool        | false      |
+| markdown-toc.updateOnSave    | bool        | true       |
+| markdown-toc.anchorMode      | enum        | github.com |
 
 ### 4.2. Unique Settings
+
 If you want to use a unique setting for a file, you can add attributes to `<!-- TOC -->` , just like:
-```
+
+```text
 <!-- TOC depthFrom:2 orderedList:true -->
 
 <!-- /TOC -->
 ```
 
 ## 5. Contributors
+
 - sine sawtooth (Add: Header number section)
 - chriscamicas (Update: Anchor generation)
 - kevindaub (Add : Use workspace settings for tabs and eOL)
@@ -87,22 +100,28 @@ If you want to use a unique setting for a file, you can add attributes to `<!-- 
 - jgroom33 (Fix: Codeblock error)
 - satokaz (Fix: Codeblock error)
 
-## 6. What's New?
-[CHANGELOG](https://github.com/huntertran/markdown-toc/blob/master/CHANGELOG.md)
+## 6. What's New
 
+[CHANGELOG](https://github.com/xavierguarch/markdown-toc/blob/master/CHANGELOG.md)
 
 ## 7. Authors
 
 This forked repository is maintained by me and anyone who would like to contribute. The EOL fixed was contributed by [roborourke](https://github.com/roborourke/markdown-toc.git) and any one open new pull request with the hope of fixing the problem.
 
-The original code is created by Alan Walk. If you have any questions, contact him at:
-- Mail : [alanwalk93@gmail.com](mailto:alanwalk93@gmail.com)
-- Twitter : [@AlanWalk93](https://twitter.com/AlanWalk93)
-- Github : [AlanWalk](https://github.com/AlanWalk)
+The original code was created by Alan Walk, and later updated by Hunter Tran. If you have any questions, contact them at:
+
+- Alan Walk
+  - Mail : [alanwalk93@gmail.com](mailto:alanwalk93@gmail.com)
+  - Twitter : [@AlanWalk93](https://twitter.com/AlanWalk93)
+  - Github : [AlanWalk](https://github.com/AlanWalk)
+- Hunter Tran
+  - Mail : [hunter.tran.92@gmail.com](mailto:hunter.tran.92@gmail.com)
 
 ## 8. License
-The package is Open Source Software released under the [MIT License](LICENSE). It's developed by AlanWalk, maintained by Hunter Tran
+
+The package is Open Source Software released under the [MIT License](LICENSE). It's developed by AlanWalk, maintained by Xavier Guarch
 
 ## 9. Links
-- [Source Code](https://github.com/huntertran/markdown-toc)
-- [Market](https://marketplace.visualstudio.com/items?itemName=huntertran.auto-markdown-toc)
+
+- [Source Code](https://github.com/xavierguarch/markdown-toc)
+- [Market](https://marketplace.visualstudio.com/items?itemName=xavierguarch.auto-markdown-toc)
