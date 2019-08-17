@@ -159,9 +159,9 @@ export class AutoMarkdownToc {
                     name,
                     '" name="',
                     name,
-                    '"></a>'];
+                    '"></a>\n'];
 
-                let insertPosition = new Position(header.range.end.line, header.range.end.character);
+                let insertPosition = new Position(header.range.start.line, header.range.start.character);
                 editBuilder.insert(insertPosition, text.join(''));
             }
         });
