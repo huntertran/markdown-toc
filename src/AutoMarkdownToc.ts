@@ -161,7 +161,7 @@ export class AutoMarkdownToc {
                     name,
                     '"></a>\n'];
 
-                let insertPosition = new Position(header.range.start.line, header.range.start.character);
+                let insertPosition = new Position(header.range.start.line, 0);
                 editBuilder.insert(insertPosition, text.join(''));
             }
         });
