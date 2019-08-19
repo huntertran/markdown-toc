@@ -154,12 +154,14 @@ export class AutoMarkdownToc {
             if (anchorMatches != null) {
                 let name = anchorMatches[1];
                 let text = [
-                    this.configManager.lineEnding,
                     '<a id="markdown-',
                     name,
                     '" name="',
                     name,
-                    '"></a>\n'];
+                    '"></a>',
+                    this.configManager.lineEnding,
+                    this.configManager.lineEnding,
+                ];
 
                 let insertPosition = new Position(header.range.start.line, 0);
                 editBuilder.insert(insertPosition, text.join(''));
@@ -175,7 +177,18 @@ export class AutoMarkdownToc {
                 let lineText = doc.lineAt(index).text;
                 if (lineText.match(this.configManager.optionKeys.REGEXP_MARKDOWN_ANCHOR) == null)
                     continue;
-                let range = new Range(new Position(index, 0), new Position(index + 1, 0));
+                
+                // We check if the line after the anchor is empty,
+                // in which case we will also remove it because our
+                // insertAnchor function inserts a blank line after the
+                // anchor.
+                let endLine = index + 1;
+                let nextLine = doc.lineAt(index + 1).text;
+                if (nextLine.length === 0) {
+                    endLine = index + 2;
+                }
+
+                let range = new Range(new Position(index, 0), new Position(endLine, 0));
                 editBuilder.delete(range);
             }
         }
