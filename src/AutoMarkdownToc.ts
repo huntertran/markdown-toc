@@ -152,19 +152,24 @@ export class AutoMarkdownToc {
         headerList.forEach(header => {
             let anchorMatches = header.hash.match(this.configManager.optionKeys.REGEXP_ANCHOR);
             if (anchorMatches != null) {
-                let name = anchorMatches[1];
-                let text = [
-                    '<a id="markdown-',
-                    name,
-                    '" name="',
-                    name,
-                    '"></a>',
-                    this.configManager.lineEnding,
-                    this.configManager.lineEnding,
-                ];
+                let headerLevel = header.headerMark.length;
+                // Do NOT add an anchor for the first level header,
+                // only for the rest of levels
+                if (headerLevel > 1) {
+                    let name = anchorMatches[1];
+                    let text = [
+                        '<a id="markdown-',
+                        name,
+                        '" name="',
+                        name,
+                        '"></a>',
+                        this.configManager.lineEnding,
+                        this.configManager.lineEnding,
+                    ];
 
-                let insertPosition = new Position(header.range.start.line, 0);
-                editBuilder.insert(insertPosition, text.join(''));
+                    let insertPosition = new Position(header.range.start.line, 0);
+                    editBuilder.insert(insertPosition, text.join(''));
+                }
             }
         });
     }
