@@ -216,7 +216,8 @@ export class AutoMarkdownToc {
         let tocRows: string[] = [];
 
         headerList.forEach(header => {
-            if (header.depth >= this.configManager.options.DEPTH_FROM.value) {
+            if (header.depth >= this.configManager.options.DEPTH_FROM.value &&
+                header.depth <= this.configManager.options.DEPTH_TO.value) {
                 let row = this.generateTocRow(header, minimumRenderedDepth);
                 tocRows.push(row);
             }
