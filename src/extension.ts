@@ -1,6 +1,7 @@
 import {
     commands,
     ExtensionContext,
+    TextDocumentChangeEvent,
     workspace
 } from 'vscode';
 
@@ -17,7 +18,12 @@ export function activate(context: ExtensionContext) {
     let deleteMarkdownSections = commands.registerCommand('extension.deleteMarkdownSections', () => { autoMarkdownToc.deleteMarkdownSections(); });
 
     // Events
-    let saveMarkdownToc = workspace.onDidSaveTextDocument(() => { autoMarkdownToc.onDidSaveTextDocument(); });
+    let saveMarkdownToc = workspace.onDidSaveTextDocument(() => {
+        autoMarkdownToc.onDidSaveTextDocument();
+    });
+    let changedTextDocument = workspace.onDidChangeTextDocument((event: TextDocumentChangeEvent) => {
+        autoMarkdownToc.onDidChangeTextDocument(event);
+    });
 
     // Add to a list of disposables which are disposed when this extension is deactivated.
     context.subscriptions.push(updateMarkdownToc);
@@ -26,6 +32,7 @@ export function activate(context: ExtensionContext) {
     context.subscriptions.push(deleteMarkdownSections);
 
     context.subscriptions.push(saveMarkdownToc);
+    context.subscriptions.push(changedTextDocument);
 }
 
 // this method is called when your extension is deactivated

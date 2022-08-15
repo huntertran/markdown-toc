@@ -3,19 +3,28 @@ import {
     Position,
     Range,
     TextEditorEdit,
-    TextDocument
+    TextDocument,
+    TextDocumentChangeEvent
 } from 'vscode';
+
 import { Header } from "./models/Header";
 import { ConfigManager } from './ConfigManager';
 import { HeaderManager } from './HeaderManager';
 import { AnchorMode } from './models/AnchorMode';
 import { RegexStrings } from './models/RegexStrings';
-import { Utilities } from './Utilities';
+import { TocManager } from './TocManager';
 
 export class AutoMarkdownToc {
 
     configManager = new ConfigManager();
     headerManager = new HeaderManager(this.configManager);
+    tocManager = new TocManager();
+
+    public onDidChangeTextDocument(event: TextDocumentChangeEvent) {
+        if (event.contentChanges.length > 0) {
+            this.tocManager.updateTocRange(event.contentChanges);
+        }
+    }
 
     public onDidSaveTextDocument() {
         if (!this.configManager.options.UPDATE_ON_SAVE.value) {
@@ -36,7 +45,7 @@ export class AutoMarkdownToc {
                 return;
             }
 
-            let tocRange = this.getTocRange();
+            let tocRange = this.tocManager.getTocRange();
 
             if (!tocRange.isSingleLine) {
                 this.updateMarkdownToc();
@@ -55,7 +64,7 @@ export class AutoMarkdownToc {
         }
 
         autoMarkdownToc.configManager.updateOptions();
-        let tocRange = autoMarkdownToc.getTocRange();
+        let tocRange = autoMarkdownToc.tocManager.getTocRange();
         let headerList = await autoMarkdownToc.headerManager.getHeaderList();
         let document = editor.document;
 
@@ -87,7 +96,7 @@ export class AutoMarkdownToc {
         }
 
         editor.edit(function (editBuilder) {
-            let tocRange = autoMarkdownToc.getTocRange();
+            let tocRange = autoMarkdownToc.tocManager.getTocRange();
             if (tocRange.isSingleLine) {
                 return;
             }
@@ -142,57 +151,6 @@ export class AutoMarkdownToc {
                 });
             });
         }
-    }
-
-    /**
-     * Get TOC range, in case of no TOC, return the active line
-     * In case of the editor is not available, return the first line
-     */
-    private getTocRange() {
-        let editor = window.activeTextEditor;
-
-        if (editor === undefined) {
-            return new Range(0, 0, 0, 0);
-        }
-
-        let doc = editor.document;
-        let start, end: Position | undefined;
-
-        for (let index = 0; index < doc.lineCount; index++) {
-
-            if (Utilities.isLineStartOrEndOfCodeBlock(index, doc)) {
-                index = Utilities.getNextLineIndexIsNotInCode(index, doc);
-            }
-
-            let lineText = doc.lineAt(index).text;
-
-            if ((start === undefined) && (lineText.match(RegexStrings.Instance.REGEXP_TOC_START) && !lineText.match(RegexStrings.Instance.REGEXP_IGNORE_TITLE))) {
-                start = new Position(index, 0);
-            }
-            else if (lineText.match(RegexStrings.Instance.REGEXP_TOC_STOP)) {
-                end = new Position(index, lineText.length);
-                break;
-            }
-        }
-
-        if ((start === undefined) || (end === undefined)) {
-            if (start !== undefined) {
-                end = start;
-            } else if (end !== undefined) {
-                start = end;
-            } else {
-                start = editor.selection.active;
-                end = editor.selection.active;
-            }
-        }
-
-        // at this point, end will not undefined,
-        // but we add declaration here for passing typescript lint
-        if (end === undefined) {
-            return new Range(start, new Position(0, 0));
-        }
-
-        return new Range(start, end);
     }
 
     /**

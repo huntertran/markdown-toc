@@ -41,7 +41,6 @@ export class HeaderManager {
                     continue;
                 }
 
-
                 header.isIgnored = this.getIsHeaderIgnored(header, editor);
                 header.orderArray = this.calculateHeaderOrder(header, headerList);
                 header.orderedListString = header.orderArray.join('.') + ".";
