@@ -48,8 +48,8 @@ export class Header {
 
     public tocRowWithAnchor(tocString: string): string {
         let title = this.cleanUpTitle(tocString);
-        let anchor_markdown_header = require('anchor-markdown-header');
-        return anchor_markdown_header(title, this.anchorMode);
+        let ANCHOR_MARKDOWN_HEADER = require('anchor-markdown-header');
+        return ANCHOR_MARKDOWN_HEADER(title, this.anchorMode);
     }
 
     public get tocWithoutOrder(): string {

@@ -149,7 +149,7 @@ export class HeaderManager {
         if (headerBeforePushToList.depth < lastHeaderInList.depth) {
             // continue of the parent level
 
-            let previousHeader = undefined;
+            let previousHeader: Header | undefined;
 
             for (let index = headerList.length - 1; index >= 0; index--) {
                 if (headerList[index].depth === headerBeforePushToList.depth) {

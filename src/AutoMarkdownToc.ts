@@ -186,6 +186,12 @@ export class AutoMarkdownToc {
             }
         }
 
+        // at this point, end will not undefined,
+        // but we add declaration here for passing typescript lint
+        if (end === undefined) {
+            return new Range(start, new Position(0, 0));
+        }
+
         return new Range(start, end);
     }
 
