@@ -1,6 +1,6 @@
 import { Header } from "./models/Header";
 import { ConfigManager } from "./ConfigManager";
-import { window, DocumentSymbol, commands, Uri, TextEditor } from "vscode";
+import { window, DocumentSymbol, commands, Uri, TextEditor, SymbolKind } from "vscode";
 import { RegexStrings } from "./models/RegexStrings";
 
 
@@ -10,9 +10,16 @@ export class HeaderManager {
     constructor(configManager: ConfigManager) {
         this.configManager = configManager;
     }
+     
+    private async getDocumentSymbols(fileUri: Uri) {                
+        let allSymbols = <DocumentSymbol[]>await commands.executeCommand("vscode.executeDocumentSymbolProvider", fileUri);
 
-    private async getDocumentSymbols(fileUri: Uri) {
-        return <DocumentSymbol[]>await commands.executeCommand("vscode.executeDocumentSymbolProvider", fileUri);
+        // Markdown headers can only be strings. Exclude all other symbols.
+        // #60: With plantuml code blocks, the @startmindmap/@endmindmap sentinels
+        // cause getDocumentSymbols to return Object kinds as well which results in empty TOCs
+        return allSymbols.filter(function(sym){
+            return sym.kind === SymbolKind.String;
+        });
     }
 
     public async getHeaderList() {
@@ -22,8 +29,8 @@ export class HeaderManager {
         if (editor !== undefined) {
 
             let fileUri = Uri.file(editor.document.fileName);
-
-            let symbols = await this.getDocumentSymbols(fileUri);
+           
+            let symbols = await this.getDocumentSymbols(fileUri);            
 
             let headerLevels = new Map<number, number>();
             let allHeaders = new Array<Header>();
@@ -84,7 +91,7 @@ export class HeaderManager {
     }
 
     private convertAllFirstLevelHeader(symbols: DocumentSymbol[], allHeaders: Header[], headerLevels: Map<number, number>) {
-        for (let index = 0; index < symbols.length; index++) {
+        for (let index = 0; index < symbols.length; index++) {            
             let header = new Header(this.configManager.options.ANCHOR_MODE.value);
             header.convertFromSymbol(symbols[index]);
             allHeaders.push(header);
@@ -97,7 +104,7 @@ export class HeaderManager {
             else {
                 depthCount = depthCount + 1;
                 headerLevels.set(header.depth, depthCount);
-            }
+            }            
         }
     }
 

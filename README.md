@@ -3,8 +3,8 @@ Auto Markdown TOC
 
 Generate TOC (table of contents) of headlines from parsed [markdown](https://en.wikipedia.org/wiki/Markdown) file.
 
-[![Marketplace Version](https://vsmarketplacebadge.apphb.com/version/huntertran.auto-markdown-toc.svg)](https://marketplace.visualstudio.com/items?itemName=huntertran.auto-markdown-toc)
-[![Rating](https://vsmarketplacebadge.apphb.com/rating/huntertran.auto-markdown-toc.svg)](https://marketplace.visualstudio.com/items?itemName=huntertran.auto-markdown-toc)
+[![Marketplace Version](https://vsmarketplacebadges.dev/version/huntertran.auto-markdown-toc.svg)](https://marketplace.visualstudio.com/items?itemName=huntertran.auto-markdown-toc)
+[![Rating](https://vsmarketplacebadges.dev/rating/huntertran.auto-markdown-toc.svg)](https://marketplace.visualstudio.com/items?itemName=huntertran.auto-markdown-toc)
 [![Node CI](https://github.com/huntertran/markdown-toc/workflows/Node%20CI/badge.svg)](https://github.com/huntertran/markdown-toc/actions)
 
 <!-- TOC -->
@@ -129,6 +129,7 @@ To change the default configuration settings for the `Auto Markdown TOC` extensi
 - jgroom33 (Fix: Codeblock error)
 - satokaz (Fix: Codeblock error)
 - [mwhebert:](https://github.com/mwhebert) issue [#20](https://github.com/huntertran/markdown-toc/issues/20)
+- [vamsi-juvvi](https://github.com/vamsi-juvvi) issue[#60](https://github.com/huntertran/markdown-toc/issues/60)
 
 # 6. What's New?
 <a id="markdown-what's-new%3F" name="what's-new%3F"></a>
