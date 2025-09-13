@@ -101,8 +101,8 @@ export class AutoMarkdownToc {
                 return;
             }
 
-            editBuilder.delete(tocRange);
             autoMarkdownToc.deleteAnchors(editBuilder);
+            editBuilder.delete(tocRange);
         });
     }
 

@@ -6,7 +6,10 @@
 		{
 			"type": "npm",
 			"script": "watch",
-			"problemMatcher": "$ts-webpack-watch",
+			"problemMatcher": [
+				"$ts-webpack",
+				"$tslint-webpack"
+			],
 			"isBackground": true,
 			"presentation": {
 				"reveal": "never",
@@ -34,7 +37,10 @@
 				"npm: watch",
 				"npm: watch-tests"
 			],
-			"problemMatcher": []
+			"problemMatcher": [
+				"$ts-webpack-watch",
+				"$tslint-webpack-watch"
+			]
 		}
 	]
 }

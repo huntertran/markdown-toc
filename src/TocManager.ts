@@ -46,24 +46,11 @@ export class TocManager {
         }
 
         if ((start === undefined) || (end === undefined)) {
-            if (start !== undefined) {
-                end = start;
-            } else if (end !== undefined) {
-                start = end;
-            } else {
-                start = editor.selection.active;
-                end = editor.selection.active;
-            }
-        }
-
-        // at this point, end will not undefined,
-        // but we add declaration here for passing typescript lint
-        if (end === undefined) {
-            this.tocRange = new Range(start, new Position(0, 0));
+            start = editor.selection.active;
+            end = editor.selection.active;
         }
 
         this.tocRange = new Range(start, end);
-        // console.log(this.tocRange);
     }
 
     /**
@@ -71,9 +58,7 @@ export class TocManager {
      * In case of the editor is not available, return the first line
     */
     public getTocRange(): Range {
-        if (this.tocRange === undefined) {
-            this.scanForTocRange();
-        }
+        this.scanForTocRange();
 
         if (this.tocRange === undefined) {
             this.tocRange = new Range(0, 0, 0, 0);

@@ -7,7 +7,7 @@ export class RegexStrings {
     REGEXP_CODE_BLOCK1 = /^\s?```/;
     REGEXP_CODE_BLOCK2 = /^\s?~~~/;
     REGEXP_ANCHOR = /\[.+\]\(#(.+)\)/;
-    REGEXP_IGNORE_TITLE = /<!-- TOC ignore:true -->/;
+    REGEXP_IGNORE_TITLE = /<!--\s*TOC\s+ingore:true\s*-->/si;
 
     REGEXP_HEADER_META = /^(\#*)\s*((\d*\.?)*)\s*(.+)/;
     REGEXP_UNIQUE_CONFIG_START = /\s*<!--(.*)[^\/]TOC UNIQUE CONFIGS(.*)-->/gi;
