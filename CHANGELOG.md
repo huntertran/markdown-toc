@@ -4,11 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [3.0.14] - 2025-09-13
+## [3.0.15] - 2025-09-13
 ### Fixed:
 - VSCode Overlapping range error
 - Cannot delete TOC when there is `<!-- TOC ignore:true -->` in text
 - TOC created in wrong location when there is `<!-- TOC ignore:true -->` in text
+- Remove svg references in README.md to conform with visual studio marketplace preprocessing
 
 ## [3.0.13] - 2023-08-18
 ### Fixed:

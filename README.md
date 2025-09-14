@@ -3,10 +3,6 @@ Auto Markdown TOC
 
 Generate TOC (table of contents) of headlines from parsed [markdown](https://en.wikipedia.org/wiki/Markdown) file.
 
-[![Marketplace Version](https://vsmarketplacebadges.dev/version/huntertran.auto-markdown-toc.svg)](https://marketplace.visualstudio.com/items?itemName=huntertran.auto-markdown-toc)
-[![Rating](https://vsmarketplacebadges.dev/rating/huntertran.auto-markdown-toc.svg)](https://marketplace.visualstudio.com/items?itemName=huntertran.auto-markdown-toc)
-[![Node CI](https://github.com/huntertran/markdown-toc/workflows/Node%20CI/badge.svg)](https://github.com/huntertran/markdown-toc/actions)
-
 <!-- TOC -->
 
 - [1. Features](#1-features)
