@@ -22,6 +22,7 @@ export class ConfigManager {
         this.options.ORDERED_LIST.workspaceValue = <boolean>workspace.getConfiguration(this.options.extensionName).get(this.options.ORDERED_LIST.key);
         this.options.UPDATE_ON_SAVE.workspaceValue = <boolean>workspace.getConfiguration(this.options.extensionName).get(this.options.UPDATE_ON_SAVE.key);
         this.options.ANCHOR_MODE.workspaceValue = <string>workspace.getConfiguration(this.options.extensionName).get(this.options.ANCHOR_MODE.key);
+        this.options.UNICODE_ANCHORS.workspaceValue = <boolean>workspace.getConfiguration(this.options.extensionName).get(this.options.UNICODE_ANCHORS.key);
         this.options.BULLET_CHAR.workspaceValue = <string>workspace.getConfiguration(this.options.extensionName).get(this.options.BULLET_CHAR.key);
         this.options.DETECT_AUTO_SET_SECTION.workspaceValue = <boolean>workspace.getConfiguration(this.options.extensionName).get(this.options.DETECT_AUTO_SET_SECTION.key);
 
@@ -104,6 +105,10 @@ export class ConfigManager {
                                     this.options.optionsFlag.push(key);
                                     this.options.ANCHOR_MODE.uniqueValue = value;
                                     break;
+                                case this.options.UNICODE_ANCHORS.lowerCaseKey:
+                                    this.options.optionsFlag.push(key);
+                                    this.options.UNICODE_ANCHORS.uniqueValue = this.parseBool(value);
+                                    break;
                                 case this.options.BULLET_CHAR.lowerCaseKey:
                                     this.options.optionsFlag.push(key);
                                     this.options.BULLET_CHAR.uniqueValue = value;
@@ -141,6 +146,8 @@ export class ConfigManager {
                 return this.options.UPDATE_ON_SAVE.value;
             case this.options.ANCHOR_MODE.lowerCaseKey:
                 return this.options.ANCHOR_MODE.value;
+            case this.options.UNICODE_ANCHORS.lowerCaseKey:
+                return this.options.UNICODE_ANCHORS.value;
             case this.options.BULLET_CHAR.lowerCaseKey:
                 return this.options.BULLET_CHAR.value;
             case this.options.DETECT_AUTO_SET_SECTION.lowerCaseKey:
