@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [3.0.16] - 2026-05-04
+### New:
+- Add `unicodeAnchors` option: use literal Unicode characters in generated anchor links instead of URL-encoding non-ASCII characters
+
+### Changed:
+- Upgraded dependencies: TypeScript 5.x, ESLint 8.57, @typescript-eslint 8.x, @types/node 22.x, mocha 11.x, and others
+- Upgraded `anchor-markdown-header` to 0.8.4 — `%` signs in heading text are now stripped from anchor URLs, matching GitHub's actual behavior
+
 ## [3.0.15] - 2025-09-13
 ### Fixed:
 - VSCode Overlapping range error

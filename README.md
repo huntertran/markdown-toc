@@ -128,6 +128,7 @@ To change the default configuration settings for the `Auto Markdown TOC` extensi
 - satokaz (Fix: Codeblock error)
 - [mwhebert:](https://github.com/mwhebert) issue [#20](https://github.com/huntertran/markdown-toc/issues/20)
 - [vamsi-juvvi](https://github.com/vamsi-juvvi) issue[#60](https://github.com/huntertran/markdown-toc/issues/60)
+- [alexchexes](https://github.com/alexchexes) add: unicodeAnchors option
 
 # 6. What's New?
 <a id="markdown-what's-new%3F" name="what's-new%3F"></a>
