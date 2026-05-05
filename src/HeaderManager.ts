@@ -92,7 +92,7 @@ export class HeaderManager {
 
     private convertAllFirstLevelHeader(symbols: DocumentSymbol[], allHeaders: Header[], headerLevels: Map<number, number>) {
         for (let index = 0; index < symbols.length; index++) {            
-            let header = new Header(this.configManager.options.ANCHOR_MODE.value);
+            let header = new Header(this.configManager.options.ANCHOR_MODE.value, this.configManager.options.UNICODE_ANCHORS.value);
             header.convertFromSymbol(symbols[index]);
             allHeaders.push(header);
 
@@ -112,7 +112,7 @@ export class HeaderManager {
         if (symbol.children.length > 0) {
             for (let index = 0; index < symbol.children.length; index++) {
 
-                let header = new Header(this.configManager.options.ANCHOR_MODE.value);
+                let header = new Header(this.configManager.options.ANCHOR_MODE.value, this.configManager.options.UNICODE_ANCHORS.value);
 
                 header.convertFromSymbol(symbol.children[index]);
 

@@ -4,6 +4,7 @@ import {
 import { AnchorMode } from './AnchorMode';
 import { Anchor } from './Anchor';
 import { RegexStrings } from './RegexStrings';
+import { decodeNonAsciiAnchorPart } from './AnchorEncoder';
 
 export class Header {
     headerMark: string = "";
@@ -16,13 +17,15 @@ export class Header {
     orderArray: number[] = [];
 
     anchorMode: AnchorMode = AnchorMode.github;
+    preserveUnicodeAnchors: boolean = false;
 
     anchor: Anchor;
 
-    constructor(anchorMode: AnchorMode) {
+    constructor(anchorMode: AnchorMode, preserveUnicodeAnchors: boolean = false) {
         this.anchorMode = anchorMode;
+        this.preserveUnicodeAnchors = preserveUnicodeAnchors;
         this.range = new Range(0, 0, 0, 0);
-        this.anchor = new Anchor("");
+        this.anchor = new Anchor("", preserveUnicodeAnchors);
     }
 
     public convertFromSymbol(symbol: DocumentSymbol) {
@@ -35,7 +38,7 @@ export class Header {
         }
 
         this.range = new Range(symbol.range.start, new Position(symbol.range.start.line, symbol.name.length));
-        this.anchor = new Anchor(this.cleanUpTitle(this.dirtyTitle));
+        this.anchor = new Anchor(this.cleanUpTitle(this.dirtyTitle), this.preserveUnicodeAnchors);
     }
 
     public get depth(): number {
@@ -49,7 +52,15 @@ export class Header {
     public tocRowWithAnchor(tocString: string): string {
         let title = this.cleanUpTitle(tocString);
         let ANCHOR_MARKDOWN_HEADER = require('anchor-markdown-header');
-        return ANCHOR_MARKDOWN_HEADER(title, this.anchorMode);
+        let tocRow = ANCHOR_MARKDOWN_HEADER(title, this.anchorMode);
+
+        if (!this.preserveUnicodeAnchors) {
+            return tocRow;
+        }
+
+        return tocRow.replace(/\]\(#([^)]+)\)$/, function (_match: string, anchorPart: string) {
+            return "](#" + decodeNonAsciiAnchorPart(anchorPart) + ")";
+        });
     }
 
     public get tocWithoutOrder(): string {

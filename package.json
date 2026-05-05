@@ -135,6 +135,11 @@
                         "gitlab.com"
                     ]
                 },
+                "markdown-toc.unicodeAnchors": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Use literal Unicode characters in generated anchor links instead of URL-encoding non-ASCII characters."
+                },
                 "markdown-toc.detectAndAutoSetSection": {
                     "type": "boolean",
                     "default": true,

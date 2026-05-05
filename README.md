@@ -80,6 +80,7 @@ To ignore a header, you can add the line `<!-- TOC ignore:true -->` above the he
 |orderedList|bool|false|
 |updateOnSave|bool|true|
 |anchorMode|github.com/bitbucket.org/ghost.org/gitlab.com|github.com|
+|unicodeAnchors|bool|false|
 
 By default, `vscode` use 4 spaces for tab. You can change that number specifically for markdown by adding this to your `settings.json`
 
@@ -104,6 +105,7 @@ To change the default configuration settings for the `Auto Markdown TOC` extensi
 |markdown-toc.orderedList|bool|false|
 |markdown-toc.updateOnSave|bool|true|
 |markdown-toc.anchorMode|enum|github.com|
+|markdown-toc.unicodeAnchors|bool|false|
 
 ## 4.2. Unique Settings
 <a id="markdown-unique-settings" name="unique-settings"></a>

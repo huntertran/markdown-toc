@@ -16,6 +16,7 @@ export class Options {
     ORDERED_LIST: Dictionary = new Dictionary("orderedList", false);
     UPDATE_ON_SAVE: Dictionary = new Dictionary("updateOnSave", true);
     ANCHOR_MODE: Dictionary = new Dictionary("anchorMode", AnchorMode.github);
+    UNICODE_ANCHORS: Dictionary = new Dictionary("unicodeAnchors", false);
     BULLET_CHAR: Dictionary = new Dictionary("bulletCharacter", "-");
     DETECT_AUTO_SET_SECTION: Dictionary = new Dictionary("detectAndAutoSetSection", false);
 
