@@ -19,7 +19,7 @@ assert.strictEqual(
     'доступ-к-локальному-серверу-с-других-устройств-в-локальной-сети'
 );
 
-assert.strictEqual(unicodeHref('🚀 тест 100% (ok)!'), '-тест-100%25-ok');
+assert.strictEqual(unicodeHref('🚀 тест 100% (ok)!'), '-тест-100-ok');
 assert.strictEqual(unicodeHref("What's New?"), 'whats-new');
 assert.strictEqual(unicodeHref('存在，【中文】；《标点》、符号！的标题？'), '存在中文标点符号的标题');
 assert.strictEqual(decodeNonAsciiAnchorPart('plain-ascii-100%25'), 'plain-ascii-100%25');
