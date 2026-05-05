@@ -25,7 +25,7 @@
     "homepage": "https://github.com/huntertran/markdown-toc",
     "publisher": "huntertran",
     "engines": {
-        "vscode": "^1.46.0"
+        "vscode": "^1.100.0"
     },
     "categories": [
         "Other"
