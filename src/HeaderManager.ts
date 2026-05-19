@@ -11,15 +11,30 @@ export class HeaderManager {
         this.configManager = configManager;
     }
      
-    private async getDocumentSymbols(fileUri: Uri) {                
+    private async getDocumentSymbols(fileUri: Uri) {
         let allSymbols = <DocumentSymbol[]>await commands.executeCommand("vscode.executeDocumentSymbolProvider", fileUri);
 
-        // Markdown headers can only be strings. Exclude all other symbols.
+        if (!allSymbols) {
+            return [];
+        }
+
+        // Markdown headers can come back as different SymbolKinds depending on which
+        // provider wins (built-in vs. Markdown All in One vs. markdownlint, etc.).
         // #60: With plantuml code blocks, the @startmindmap/@endmindmap sentinels
-        // cause getDocumentSymbols to return Object kinds as well which results in empty TOCs
-        return allSymbols.filter(function(sym){
-            return sym.kind === SymbolKind.String;
-        });
+        // cause getDocumentSymbols to return Object kinds which must be excluded.
+        const headerKinds = new Set<SymbolKind>([
+            SymbolKind.String,
+            SymbolKind.Field,
+            SymbolKind.Key,
+            SymbolKind.Module,
+            SymbolKind.Method,
+        ]);
+
+        const filtered = allSymbols.filter(sym => headerKinds.has(sym.kind));
+
+        // Fallback: if the filter eliminated everything but symbols exist,
+        // trust the provider and use the raw list instead of producing an empty TOC.
+        return filtered.length > 0 ? filtered : allSymbols;
     }
 
     public async getHeaderList() {

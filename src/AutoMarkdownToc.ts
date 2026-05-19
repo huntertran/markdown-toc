@@ -68,7 +68,12 @@ export class AutoMarkdownToc {
         let headerList = await autoMarkdownToc.headerManager.getHeaderList();
         let document = editor.document;
 
-        editor.edit(async editBuilder => {
+        if (headerList.length === 0) {
+            window.showWarningMessage("Auto Markdown TOC: no headers detected. TOC was not modified.");
+            return;
+        }
+
+        editor.edit(editBuilder => {
             if (!tocRange.isSingleLine) {
                 editBuilder.delete(tocRange);
                 autoMarkdownToc.deleteAnchors(editBuilder);

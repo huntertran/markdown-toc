@@ -6,6 +6,9 @@ import { Anchor } from './Anchor';
 import { RegexStrings } from './RegexStrings';
 import { decodeNonAsciiAnchorPart } from './AnchorEncoder';
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const ANCHOR_MARKDOWN_HEADER: (title: string, mode: AnchorMode | string) => string = require('anchor-markdown-header');
+
 export class Header {
     headerMark: string = "";
     orderedListString: string = "";
@@ -51,7 +54,6 @@ export class Header {
 
     public tocRowWithAnchor(tocString: string): string {
         let title = this.cleanUpTitle(tocString);
-        let ANCHOR_MARKDOWN_HEADER = require('anchor-markdown-header');
         let tocRow = ANCHOR_MARKDOWN_HEADER(title, this.anchorMode);
 
         if (!this.preserveUnicodeAnchors) {

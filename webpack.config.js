@@ -25,7 +25,12 @@ const extensionConfig = {
   },
   resolve: {
     // support reading TypeScript and JavaScript files, 📖 -> https://github.com/TypeStrong/ts-loader
-    extensions: ['.ts', '.js']
+    extensions: ['.ts', '.js'],
+    // Prefer CommonJS `main` over ESM `module`. emoji-regex@10 ships an ESM
+    // `index.mjs` with a default export; if webpack picks it, `require()` returns
+    // { default: fn } and consumers like anchor-markdown-header that do
+    // `require('emoji-regex')()` throw "emojiRegex is not a function".
+    mainFields: ['main', 'module']
   },
   module: {
     rules: [
