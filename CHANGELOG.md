@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [3.0.17] - 2026-05-18
+### Fixed:
+- Insert/Update TOC command no longer deletes the existing TOC when no headers are detected — previously an unhandled throw inside an `async` edit callback caused the queued delete to commit without a replacement
+- `TypeError: emojiRegex is not a function` at activation/usage caused by webpack picking the ESM `emoji-regex@10` build under `target: 'node'`; webpack now resolves the CommonJS `main` field
+- Broadened header `SymbolKind` filter (added `Field`, `Key`, `Module`, `Method`) with a fallback to raw symbols so third-party markdown symbol providers no longer produce empty TOCs
+
 ## [3.0.16] - 2026-05-04
 ### New:
 - Add `unicodeAnchors` option: use literal Unicode characters in generated anchor links instead of URL-encoding non-ASCII characters
