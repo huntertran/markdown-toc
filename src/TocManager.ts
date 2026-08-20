@@ -34,6 +34,10 @@ export class TocManager {
                 index = Utilities.getNextLineIndexIsNotInCode(index, doc);
             }
 
+            if (index < 0 || index >= doc.lineCount) {
+                break;
+            }
+
             let lineText = doc.lineAt(index).text;
 
             if ((start === undefined) && (lineText.match(RegexStrings.Instance.REGEXP_TOC_START) && !lineText.match(RegexStrings.Instance.REGEXP_IGNORE_TITLE))) {

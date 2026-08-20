@@ -5,7 +5,7 @@ export class Utilities {
     public static getNextLineIndexIsNotInCode(index: number, doc: TextDocument) {
         for (let currentLineIndex = index + 1; currentLineIndex < doc.lineCount; currentLineIndex++) {
             if (this.isLineStartOrEndOfCodeBlock(currentLineIndex, doc)) {
-                return currentLineIndex + 1;
+                return Math.min(currentLineIndex + 1, doc.lineCount - 1);
             }
         }
 
