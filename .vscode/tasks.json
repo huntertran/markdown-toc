@@ -41,6 +41,128 @@
 				"$ts-webpack-watch",
 				"$tslint-webpack-watch"
 			]
+		},
+		{
+			"type": "npm",
+			"script": "test",
+			"label": "npm: test",
+			"problemMatcher": [],
+			"group": {
+				"kind": "test",
+				"isDefault": true
+			},
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated"
+			}
+		},
+		{
+			// Lists exactly what would go into the VSIX, per .vscodeignore.
+			"label": "vsce: ls (package contents)",
+			"type": "shell",
+			"command": "npx @vscode/vsce ls",
+			"problemMatcher": [],
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated"
+			}
+		},
+		{
+			// Builds auto-markdown-toc-<version>.vsix without publishing.
+			"label": "vsce: package (.vsix)",
+			"type": "shell",
+			"command": "npx @vscode/vsce package",
+			"problemMatcher": [],
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated"
+			}
+		},
+		{
+			// Publishes the version already in package.json to the VS Code Marketplace.
+			// Auth: run `npx @vscode/vsce login huntertran` once, or set VSCE_PAT
+			// in the environment. Never put the PAT in this file.
+			// Runs the test suite first; vsce then runs vscode:prepublish (webpack).
+			"label": "vsce: publish",
+			"type": "shell",
+			"command": "npx @vscode/vsce publish",
+			"dependsOn": "npm: test",
+			"dependsOrder": "sequence",
+			"problemMatcher": [],
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated"
+			}
+		},
+		{
+			// Same, but bumps the version, commits and tags it first.
+			// Pick major / minor / patch when prompted.
+			"label": "vsce: publish (bump version)",
+			"type": "shell",
+			"command": "npx @vscode/vsce publish ${input:versionBump}",
+			"dependsOn": "npm: test",
+			"dependsOrder": "sequence",
+			"problemMatcher": [],
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated"
+			}
+		},
+		{
+			// Publishes to Open VSX (https://open-vsx.org), the registry used by
+			// VSCodium, Gitpod, Cursor, Theia. Namespace `huntertran` already exists.
+			// Auth: set OVSX_PAT in the environment. Never put the PAT in this file.
+			// Packages the current directory, so vscode:prepublish (webpack) runs.
+			"label": "ovsx: publish (Open VSX)",
+			"type": "shell",
+			"command": "npx ovsx publish",
+			"problemMatcher": [],
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated"
+			}
+		},
+		{
+			// Publishes an already built .vsix to Open VSX instead of repackaging.
+			// Use after `vsce: package (.vsix)` so both registries get one artifact.
+			"label": "ovsx: publish existing .vsix",
+			"type": "shell",
+			"command": "npx ovsx publish ${input:vsixFile}",
+			"problemMatcher": [],
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated"
+			}
+		},
+		{
+			// Full release: test, publish to the Marketplace, then to Open VSX.
+			// Needs VSCE_PAT (or a prior vsce login) and OVSX_PAT.
+			"label": "publish: Marketplace + Open VSX",
+			"dependsOn": [
+				"vsce: publish",
+				"ovsx: publish (Open VSX)"
+			],
+			"dependsOrder": "sequence",
+			"problemMatcher": []
+		}
+	],
+	"inputs": [
+		{
+			"id": "versionBump",
+			"type": "pickString",
+			"description": "Version increment to publish",
+			"options": [
+				"patch",
+				"minor",
+				"major"
+			],
+			"default": "patch"
+		},
+		{
+			"id": "vsixFile",
+			"type": "promptString",
+			"description": "Path to the .vsix to upload to Open VSX",
+			"default": "auto-markdown-toc-3.1.0.vsix"
 		}
 	]
 }
