@@ -4,6 +4,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [3.1.0] - 2026-09-06
+### New:
+- Header numbering is applied again on Insert/Update TOC: a document that already numbers its headers (`# 1. Section`) has those numbers corrected on every update, and its TOC rows are numbered to match, without needing `orderedList`. Controlled by `detectAndAutoSetSection`; documents that do not number their headers are left untouched
+
+### Changed:
+- `detectAndAutoSetSection` now defaults to `true`. The setting was declared as `true` in the extension manifest but read as `false` in code, so it never took effect
+- With `insertAnchor:false` (the default), Insert/Update TOC no longer deletes the anchors a document already contains. Anchors are only rewritten when the extension is also inserting them; use **Auto Markdown TOC: Delete** to remove a TOC and its anchors
+- A TOC inserted at the cursor is now separated from the text on that line instead of running into it
+- Renumbering makes Insert/Update TOC two undo steps on documents with numbered headers
+- The `test/` fixtures and `plan/` notes are no longer packaged into the published extension
+
+### Fixed:
+- [#56](https://github.com/huntertran/markdown-toc/issues/56): `Illegal value for 'line'` aborted Insert/Update TOC when the document ended with a closing code fence
+- `<!-- TOC ignore:true -->` had no effect: only the original misspelling `ingore:true` was recognised. Both spellings now work, so documents written against either release keep working
+- An ignore marker on the very first line of a document was never applied to the header below it
+- **Auto Markdown Sections: Insert/Update** removed header numbers instead of writing them whenever `orderedList` was off, which is the default
+- `detectAndAutoSetSection` set inside a `<!-- TOC ... -->` marker was read as text, so `detectandautosetsection:false` behaved as `true`
+- The header depth filter compared an occurrence count against a header depth, so which headers reached the TOC in documents with mixed top-level depths was effectively arbitrary
+
+### Development:
+- The manual fixtures in `test/*.md` now run headless: `npm test` drives the real extension code against every fixture through a stubbed `vscode` API and compares the result with the snapshots in `test/expected/`. `npm run test:manual -- --update` refreshes them
+
 ## [3.0.17] - 2026-05-18
 ### Fixed:
 - Insert/Update TOC command no longer deletes the existing TOC when no headers are detected — previously an unhandled throw inside an `async` edit callback caused the queued delete to commit without a replacement

@@ -14,6 +14,17 @@ import { AnchorMode } from './models/AnchorMode';
 import { RegexStrings } from './models/RegexStrings';
 import { TocManager } from './TocManager';
 
+interface TocInsertOptions {
+    // Numbered TOC rows ("1.1. Title"), either because orderedList is on or
+    // because the document already numbers its headers.
+    useOrderedToc: boolean;
+
+    // Line endings that keep a freshly inserted TOC off the text around the
+    // cursor. Empty when an existing TOC block is being replaced.
+    prefix: string;
+    suffix: string;
+}
+
 export class AutoMarkdownToc {
 
     configManager = new ConfigManager();
@@ -63,33 +74,91 @@ export class AutoMarkdownToc {
             return;
         }
 
+        let activeEditor = editor;
+
         autoMarkdownToc.configManager.updateOptions();
-        let tocRange = autoMarkdownToc.tocManager.getTocRange();
         let headerList = await autoMarkdownToc.headerManager.getHeaderList();
-        let document = editor.document;
 
         if (headerList.length === 0) {
             window.showWarningMessage("Auto Markdown TOC: no headers detected. TOC was not modified.");
             return;
         }
 
-        editor.edit(editBuilder => {
+        // A document that already numbers its headers keeps those numbers in
+        // sync. This runs as its own edit: header replacements and the TOC
+        // insert below would otherwise be resolved against the same original
+        // positions, and the header list has to be rebuilt from the renumbered
+        // text before the TOC rows are generated.
+        if (autoMarkdownToc.isAutoSetSectionEnabled()) {
+            await activeEditor.edit(editBuilder => {
+                autoMarkdownToc.updateHeadersWithSections(editBuilder, headerList, activeEditor.document, false);
+            });
+
+            headerList = await autoMarkdownToc.headerManager.getHeaderList();
+        }
+
+        let tocRange = autoMarkdownToc.tocManager.getTocRange();
+
+        await activeEditor.edit(editBuilder => {
             if (!tocRange.isSingleLine) {
                 editBuilder.delete(tocRange);
-                autoMarkdownToc.deleteAnchors(editBuilder);
+
+                // Anchors are only cleared when they are about to be written
+                // again. With insertAnchor off an update must not silently
+                // remove markup it will not put back; use the
+                // "Auto Markdown TOC: Delete" command for that.
+                if (autoMarkdownToc.configManager.options.INSERT_ANCHOR.value) {
+                    autoMarkdownToc.deleteAnchors(editBuilder);
+                }
             }
 
-            // TODO: need to go back to this
-            // if (this.configManager.options.DETECT_AUTO_SET_SECTION.value) { // } && this.configManager.options.isOrderedListDetected) {
-            //     autoMarkdownToc.updateHeadersWithSections(editBuilder, headerList, document);
+            autoMarkdownToc.createToc(
+                editBuilder,
+                headerList,
+                tocRange.start,
+                autoMarkdownToc.getTocInsertOptions(tocRange, activeEditor.document));
 
-            //     //rebuild header list, because headers have changed
-            //     headerList = await autoMarkdownToc.headerManager.getHeaderList();
-            // }
-
-            autoMarkdownToc.createToc(editBuilder, headerList, tocRange.start);
             autoMarkdownToc.insertAnchors(editBuilder, headerList);
         });
+    }
+
+    /**
+     * True when the document numbers its headers and the user has left
+     * detectAndAutoSetSection on. Only meaningful after getHeaderList() has run,
+     * which is what sets isOrderedListDetected.
+     */
+    private isAutoSetSectionEnabled(): boolean {
+        return this.configManager.options.DETECT_AUTO_SET_SECTION.value === true
+            && this.configManager.options.isOrderedListDetected;
+    }
+
+    /**
+     * A TOC replacing an existing block needs no padding: the block it replaces
+     * already sits on its own lines. A TOC inserted at the cursor does, or it
+     * ends up glued to whatever shares that line.
+     */
+    private getTocInsertOptions(tocRange: Range, document: TextDocument): TocInsertOptions {
+        let options: TocInsertOptions = {
+            useOrderedToc: this.configManager.options.ORDERED_LIST.value === true || this.isAutoSetSectionEnabled(),
+            prefix: '',
+            suffix: ''
+        };
+
+        if (!tocRange.isEmpty) {
+            return options;
+        }
+
+        let lineText = document.lineAt(tocRange.start.line).text;
+
+        if (lineText.substring(0, tocRange.start.character) !== '') {
+            options.prefix = this.configManager.options.lineEnding;
+        }
+
+        if (lineText.substring(tocRange.start.character) !== '') {
+            options.suffix = this.configManager.options.lineEnding;
+        }
+
+        return options;
     }
 
     public deleteMarkdownToc() {
@@ -111,18 +180,20 @@ export class AutoMarkdownToc {
         });
     }
 
-    public updateHeadersWithSections(editBuilder: TextEditorEdit, headerList: Header[], document: TextDocument) {
+    public updateHeadersWithSections(editBuilder: TextEditorEdit, headerList: Header[], document: TextDocument, insertSpacing: boolean = true) {
         headerList.forEach(header => {
 
-            if (header.range.start.line !== 0 && !document.lineAt(header.range.start.line - 1).isEmptyOrWhitespace) {
+            // The Sections command separates a header from the text above it.
+            // A TOC update must not reflow the document, so it opts out.
+            if (insertSpacing && header.range.start.line !== 0 && !document.lineAt(header.range.start.line - 1).isEmptyOrWhitespace) {
                 editBuilder.insert(new Position(header.range.start.line, 0), this.configManager.options.lineEnding);
             }
 
-            if (this.configManager.options.ORDERED_LIST.value) {
-                editBuilder.replace(header.range, header.fullHeaderWithOrder);
-            } else {
-                editBuilder.replace(header.range, header.fullHeaderWithoutOrder);
-            }
+            // Writing sections always means writing the numbers. Gating this on
+            // orderedList turned "Sections: Insert/Update" into a delete
+            // whenever that option was off; removal has its own command,
+            // deleteMarkdownSections.
+            editBuilder.replace(header.range, header.fullHeaderWithOrder);
         });
     }
 
@@ -229,7 +300,7 @@ export class AutoMarkdownToc {
         return startPosition;
     }
 
-    private createToc(editBuilder: TextEditorEdit, headerList: Header[], insertPosition: Position) {
+    private createToc(editBuilder: TextEditorEdit, headerList: Header[], insertPosition: Position, options: TocInsertOptions) {
 
         let text: string[] = [];
 
@@ -246,7 +317,7 @@ export class AutoMarkdownToc {
 
         headerList.forEach(header => {
             if (header.depth >= this.configManager.options.DEPTH_FROM.value && !header.isIgnored) {
-                let row = this.generateTocRow(header, minimumRenderedDepth);
+                let row = this.generateTocRow(header, minimumRenderedDepth, options.useOrderedToc);
                 tocRows.push(row);
             }
         });
@@ -257,10 +328,10 @@ export class AutoMarkdownToc {
         text.push(this.configManager.options.lineEnding + "<!-- /TOC -->");
 
         // insert
-        editBuilder.insert(insertPosition, text.join(this.configManager.options.lineEnding));
+        editBuilder.insert(insertPosition, options.prefix + text.join(this.configManager.options.lineEnding) + options.suffix);
     }
 
-    private generateTocRow(header: Header, minimumRenderedDepth: number) {
+    private generateTocRow(header: Header, minimumRenderedDepth: number, useOrderedToc: boolean) {
         let row: string[] = [];
 
         // Indentation
@@ -273,16 +344,16 @@ export class AutoMarkdownToc {
 
         // TOC with or without link and order
         if (this.configManager.options.WITH_LINKS.value) {
-            row.push(header.tocRowWithAnchor(this.getTocString(header)));
+            row.push(header.tocRowWithAnchor(this.getTocString(header, useOrderedToc)));
         } else {
-            row.push(this.getTocString(header));
+            row.push(this.getTocString(header, useOrderedToc));
         }
 
         return row.join('');
     }
 
-    private getTocString(header: Header) {
-        if (this.configManager.options.ORDERED_LIST.value) {
+    private getTocString(header: Header, useOrderedToc: boolean) {
+        if (useOrderedToc) {
             return header.tocWithOrder;
         } else {
             return header.tocWithoutOrder;

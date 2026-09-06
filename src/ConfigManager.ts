@@ -115,7 +115,7 @@ export class ConfigManager {
                                     break;
                                 case this.options.DETECT_AUTO_SET_SECTION.lowerCaseKey:
                                     this.options.optionsFlag.push(key);
-                                    this.options.DETECT_AUTO_SET_SECTION.uniqueValue = value;
+                                    this.options.DETECT_AUTO_SET_SECTION.uniqueValue = this.parseBool(value);
                                     break;
                             }
                         }

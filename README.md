@@ -11,6 +11,8 @@ Generate TOC (table of contents) of headlines from parsed [markdown](https://en.
     - [3.1. Insert TOC](#31-insert-toc)
     - [3.2. Insert Header Number Sections](#32-insert-header-number-sections)
     - [3.3. Ignore Header](#33-ignore-header)
+    - [3.4. Anchors](#34-anchors)
+    - [3.5. Header Numbering](#35-header-numbering)
 - [4. Configuration](#4-configuration)
     - [4.1. Default Settings](#41-default-settings)
     - [4.2. Unique Settings](#42-unique-settings)
@@ -67,6 +69,22 @@ To ignore a header, you can add the line `<!-- TOC ignore:true -->` above the he
 # Header that should not be ignored
 ```
 
+## 3.4. Anchors
+<a id="markdown-anchors" name="anchors"></a>
+
+With `insertAnchor:true` every header gets an anchor tag written under it (above it in `bitbucket.org` mode), and each Insert/Update refreshes them: the anchors this extension generated are removed and written again, so anchors left over from renamed or deleted headers do not pile up.
+
+With `insertAnchor:false` (the default) Insert/Update leaves existing anchors alone. Updating a table of contents never deletes markup it would not put back. To remove the anchors, run **Auto Markdown TOC: Delete**, which clears the TOC and its anchors together.
+
+Only tags this extension generated are touched, that is lines matching `<a id="markdown-..." name="..."></a>`. Anchors you wrote yourself are never removed.
+
+## 3.5. Header Numbering
+<a id="markdown-header-numbering" name="header-numbering"></a>
+
+**Auto Markdown Sections: Insert/Update** numbers every header (`# 1. First`, `## 1.1. Child`), and **Auto Markdown Sections: Delete** removes the numbers again.
+
+A document that already numbers its headers keeps them correct on its own: with `detectAndAutoSetSection:true` (the default) every TOC update renumbers the headers and writes numbered TOC rows, so inserting or deleting a section does not leave the rest of the document stale. Documents that do not number their headers are left alone, and can still get numbered rows in the TOC only by setting `orderedList:true`.
+
 # 4. Configuration
 <a id="markdown-configuration" name="configuration"></a>
 
@@ -81,6 +99,7 @@ To ignore a header, you can add the line `<!-- TOC ignore:true -->` above the he
 |updateOnSave|bool|true|
 |anchorMode|github.com/bitbucket.org/ghost.org/gitlab.com|github.com|
 |unicodeAnchors|bool|false|
+|detectAndAutoSetSection|bool|true|
 
 By default, `vscode` use 4 spaces for tab. You can change that number specifically for markdown by adding this to your `settings.json`
 
@@ -106,6 +125,7 @@ To change the default configuration settings for the `Auto Markdown TOC` extensi
 |markdown-toc.updateOnSave|bool|true|
 |markdown-toc.anchorMode|enum|github.com|
 |markdown-toc.unicodeAnchors|bool|false|
+|markdown-toc.detectAndAutoSetSection|bool|true|
 
 ## 4.2. Unique Settings
 <a id="markdown-unique-settings" name="unique-settings"></a>

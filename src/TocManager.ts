@@ -34,7 +34,7 @@ export class TocManager {
                 index = Utilities.getNextLineIndexIsNotInCode(index, doc);
             }
 
-            if (index < 0 || index >= doc.lineCount) {
+            if (index >= doc.lineCount) {
                 break;
             }
 

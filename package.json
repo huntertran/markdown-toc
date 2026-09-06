@@ -2,7 +2,7 @@
     "name": "auto-markdown-toc",
     "displayName": "Auto Markdown TOC",
     "description": "Markdown TOC (Table Of Contents) Plugin for Visual Studio Code.",
-    "version": "3.0.17",
+    "version": "3.1.0",
     "preview": true,
     "icon": "img/markdown-toc.png",
     "license": "MIT",
@@ -157,22 +157,21 @@
         "watch-tests": "tsc -p . -w --outDir out",
         "pretest": "npm run compile-tests && npm run compile && npm run lint",
         "lint": "eslint src --ext ts",
-        "test": "node ./out/test/runTest.js"
+        "test": "node ./out/test/runTest.js && node ./out/test/manual/runManualTests.js",
+        "test:manual": "node ./out/test/manual/runManualTests.js"
     },
     "dependencies": {
         "anchor-markdown-header": "^0.8.4"
     },
     "devDependencies": {
         "@types/glob": "^8.1.0",
-        "@types/mocha": "^10.0.10",
-        "@types/node": "^22.19.19",
+        "@types/node": "^22.20.1",
         "@types/vscode": "^1.100.0",
         "@typescript-eslint/eslint-plugin": "^8.59.2",
         "@typescript-eslint/parser": "^8.59.2",
         "@vscode/test-electron": "^2.5.2",
         "eslint": "^8.57.1",
         "glob": "^7.2.3",
-        "mocha": "^11.7.5",
         "ts-loader": "^9.5.7",
         "typescript": "^5.8.3",
         "webpack-cli": "^4.10.0"

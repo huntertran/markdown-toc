@@ -82,7 +82,9 @@ export class HeaderManager {
 
     private getIsHeaderIgnored(header: Header, editor: TextEditor) {
         let previousLine = header.range.start.line - 1;
-        if (previousLine > 0) {
+
+        // Line 0 is a valid place for the marker, so the guard is >= 0.
+        if (previousLine >= 0) {
             if (editor.document.lineAt(previousLine).text.match(RegexStrings.Instance.REGEXP_IGNORE_TITLE)) {
                 return true;
             }
@@ -95,10 +97,17 @@ export class HeaderManager {
         let mostPopularHeaderDepth = 0;
         let mostPopularHeaderDepthCount = 0;
 
-        headerLevels.forEach((value: number, key: number) => {
-            if (value >= mostPopularHeaderDepth) {
-                mostPopularHeaderDepthCount = value;
-                mostPopularHeaderDepth = key;
+        headerLevels.forEach((count: number, depth: number) => {
+            // Compare counts against counts. Comparing a count against a depth,
+            // as this used to, picked the winner more or less at random and
+            // could cut off top level sections. Ties go to the shallower depth
+            // so the broadest set of headers survives the filter.
+            let isMorePopular = count > mostPopularHeaderDepthCount;
+            let isShallowerTie = count === mostPopularHeaderDepthCount && depth < mostPopularHeaderDepth;
+
+            if (isMorePopular || isShallowerTie) {
+                mostPopularHeaderDepthCount = count;
+                mostPopularHeaderDepth = depth;
             }
         });
 
@@ -148,8 +157,11 @@ export class HeaderManager {
 
         this.configManager.options.isOrderedListDetected = false;
 
+        // orderedListString is recomputed for every header, so it can never
+        // answer "does this document number its headers?". detectedOrderString
+        // keeps what the header text itself carried.
         for (let index = 0; index < headerList.length; index++) {
-            if (headerList[index].orderedListString !== undefined && headerList[index].orderedListString !== '') {
+            if (headerList[index].detectedOrderString !== undefined && headerList[index].detectedOrderString !== '') {
                 this.configManager.options.isOrderedListDetected = true;
                 break;
             }

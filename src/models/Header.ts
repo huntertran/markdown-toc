@@ -12,6 +12,12 @@ const ANCHOR_MARKDOWN_HEADER: (title: string, mode: AnchorMode | string) => stri
 export class Header {
     headerMark: string = "";
     orderedListString: string = "";
+
+    // The order the header text already carried ("2.1." in "## 2.1. Title"), as
+    // opposed to orderedListString, which HeaderManager recomputes. Empty when
+    // the document does not number its headers.
+    detectedOrderString: string = "";
+
     dirtyTitle: string = "";
     range: Range;
 
@@ -37,6 +43,7 @@ export class Header {
         if (headerTextSplit !== null) {
             this.headerMark = headerTextSplit[1];
             this.orderedListString = headerTextSplit[2];
+            this.detectedOrderString = headerTextSplit[2];
             this.dirtyTitle = headerTextSplit[4];
         }
 
