@@ -28,13 +28,10 @@ export class Header {
     anchorMode: AnchorMode = AnchorMode.github;
     preserveUnicodeAnchors: boolean = false;
 
-    anchor: Anchor;
-
     constructor(anchorMode: AnchorMode, preserveUnicodeAnchors: boolean = false) {
         this.anchorMode = anchorMode;
         this.preserveUnicodeAnchors = preserveUnicodeAnchors;
         this.range = new Range(0, 0, 0, 0);
-        this.anchor = new Anchor("", preserveUnicodeAnchors);
     }
 
     public convertFromSymbol(symbol: DocumentSymbol) {
@@ -51,7 +48,6 @@ export class Header {
         }
 
         this.range = new Range(symbol.range.start, new Position(symbol.range.start.line, symbol.name.length));
-        this.anchor = new Anchor(this.cleanUpTitle(this.dirtyTitle), this.preserveUnicodeAnchors);
     }
 
     public get depth(): number {
@@ -73,6 +69,22 @@ export class Header {
         return tocRow.replace(/\]\(#([^)]+)\)$/, function (_match: string, anchorPart: string) {
             return "](#" + decodeNonAsciiAnchorPart(anchorPart) + ")";
         });
+    }
+
+    /**
+     * The anchor the TOC row for `tocString` points at, or undefined when that
+     * row carries no link. `tocString` has to be the very same string the row
+     * was generated from, numbering included, or the anchor lands on a slug
+     * nothing links to.
+     */
+    public anchorFor(tocString: string): Anchor | undefined {
+        let anchorMatches = this.tocRowWithAnchor(tocString).match(RegexStrings.Instance.REGEXP_ANCHOR);
+
+        if (anchorMatches === null) {
+            return undefined;
+        }
+
+        return new Anchor(anchorMatches[1]);
     }
 
     public get tocWithoutOrder(): string {

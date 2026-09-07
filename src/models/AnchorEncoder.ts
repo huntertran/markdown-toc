@@ -68,7 +68,3 @@ export function decodeNonAsciiAnchorPart(value: string) {
 
     return result;
 }
-
-export function encodeURIComponentPreservingUnicode(value: string) {
-    return decodeNonAsciiAnchorPart(encodeURIComponent(value));
-}

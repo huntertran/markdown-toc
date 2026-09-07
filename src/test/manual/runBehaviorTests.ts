@@ -212,6 +212,163 @@ async function perDocumentOptionsSurviveRepeatedRuns(): Promise<void> {
     console.log('  document options are re-read on every run');
 }
 
+/**
+ * Every "](#slug)" the TOC links to, in document order.
+ */
+function tocLinkTargets(text: string): string[] {
+    let targets: string[] = [];
+    let pattern = /\]\(#([^)]+)\)/g;
+    let match = pattern.exec(text);
+
+    while (match !== null) {
+        targets.push(match[1]);
+        match = pattern.exec(text);
+    }
+
+    return targets;
+}
+
+/**
+ * Every anchor the extension wrote, in document order.
+ */
+function anchorNames(text: string): string[] {
+    let names: string[] = [];
+    let pattern = /<a id="markdown-[^"]*" name="([^"]*)"><\/a>/g;
+    let match = pattern.exec(text);
+
+    while (match !== null) {
+        names.push(match[1]);
+        match = pattern.exec(text);
+    }
+
+    return names;
+}
+
+/**
+ * #10 and #33 - the TOC link and the anchor it points at were produced by two
+ * different slug algorithms, so they only agreed for a punctuation-free,
+ * unnumbered heading. The link came from anchor-markdown-header (GitHub's
+ * rules); the anchor ran encodeURIComponent over the raw title, and ignored the
+ * section number the row carried. Every link in an ordered TOC was dead, and so
+ * was every link whose title held punctuation.
+ */
+async function anchorsMatchTheirTocLinks(): Promise<void> {
+    let extension = new AutoMarkdownToc();
+    let doc = open('anchor_slug.md', [
+        '<!-- TOC insertAnchor:true orderedList:true -->',
+        '',
+        '<!-- /TOC -->',
+        '',
+        '# Section H1',
+        '',
+        '## Alpha, Beta',
+        '',
+        '## Gamma & Delta',
+        '',
+        "## What's New?"
+    ]);
+
+    await extension.updateMarkdownToc();
+
+    let text = doc.getText();
+    let targets = tocLinkTargets(text);
+    let names = anchorNames(text);
+
+    assert.strictEqual(targets.length, 4, 'every heading gets a TOC row');
+    assert.deepStrictEqual(names, targets, 'every anchor has to be the target of its own TOC row');
+
+    // Spelled out, so a regression is readable rather than just unequal.
+    assert.deepStrictEqual(targets, [
+        '1-section-h1',
+        '11-alpha-beta',
+        '12-gamma--delta',
+        '13-whats-new'
+    ]);
+
+    assert.strictEqual(text.indexOf('%2C'), -1, 'the anchor must not percent-escape punctuation');
+    assert.strictEqual(text.indexOf('%26'), -1, 'the anchor must not percent-escape punctuation');
+
+    console.log('  ordered TOC rows and punctuated titles link to the anchors that exist');
+}
+
+/**
+ * The unordered path has to keep working too: with orderedList off the anchor
+ * follows the unnumbered slug.
+ */
+async function anchorsMatchUnorderedTocLinks(): Promise<void> {
+    let extension = new AutoMarkdownToc();
+    let doc = open('anchor_slug_unordered.md', [
+        '<!-- TOC insertAnchor:true -->',
+        '',
+        '<!-- /TOC -->',
+        '',
+        '# Section H1',
+        '',
+        '## Alpha, Beta'
+    ]);
+
+    await extension.updateMarkdownToc();
+
+    let text = doc.getText();
+
+    assert.deepStrictEqual(tocLinkTargets(text), ['section-h1', 'alpha-beta']);
+    assert.deepStrictEqual(anchorNames(text), ['section-h1', 'alpha-beta']);
+
+    console.log('  an unordered TOC still anchors on the unnumbered slug');
+}
+
+/**
+ * A document that numbers its own headers takes the ordered path through
+ * detectAndAutoSetSection, without orderedList being set anywhere. The anchors
+ * have to follow that decision as well.
+ */
+async function anchorsFollowDetectedNumbering(): Promise<void> {
+    let extension = new AutoMarkdownToc();
+    let doc = open('anchor_slug_detected.md', [
+        '<!-- TOC insertAnchor:true -->',
+        '',
+        '<!-- /TOC -->',
+        '',
+        '# 1. Already numbered',
+        '',
+        '## 1.1. Child, with a comma'
+    ]);
+
+    await extension.updateMarkdownToc();
+
+    let text = doc.getText();
+    let targets = tocLinkTargets(text);
+
+    assert.deepStrictEqual(targets, ['1-already-numbered', '11-child-with-a-comma']);
+    assert.deepStrictEqual(anchorNames(text), targets, 'detected numbering has to reach the anchors too');
+
+    console.log('  detected numbering reaches the anchors as well');
+}
+
+/**
+ * With unicodeAnchors on, the row keeps literal Unicode in its href. The anchor
+ * has to keep the same literal form, not a percent-encoded one.
+ */
+async function unicodeAnchorsStillMatch(): Promise<void> {
+    let extension = new AutoMarkdownToc();
+    let doc = open('anchor_slug_unicode.md', [
+        '<!-- TOC insertAnchor:true unicodeAnchors:true -->',
+        '',
+        '<!-- /TOC -->',
+        '',
+        '# Заголовок, с запятой'
+    ]);
+
+    await extension.updateMarkdownToc();
+
+    let text = doc.getText();
+    let targets = tocLinkTargets(text);
+
+    assert.deepStrictEqual(targets, ['заголовок-с-запятой']);
+    assert.deepStrictEqual(anchorNames(text), targets, 'unicodeAnchors has to apply to both halves of the link');
+
+    console.log('  unicodeAnchors applies to the link and the anchor alike');
+}
 
 async function main(): Promise<void> {
     let tests = [
@@ -219,7 +376,11 @@ async function main(): Promise<void> {
         updateOnSaveStillWorks,
         documentLevelUpdateOnSaveWins,
         perDocumentOptionsDoNotLeak,
-        perDocumentOptionsSurviveRepeatedRuns
+        perDocumentOptionsSurviveRepeatedRuns,
+        anchorsMatchTheirTocLinks,
+        anchorsMatchUnorderedTocLinks,
+        anchorsFollowDetectedNumbering,
+        unicodeAnchorsStillMatch
     ];
 
     // An optional substring argument runs a subset, which is how each test was

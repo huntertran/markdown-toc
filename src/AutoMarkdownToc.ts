@@ -109,6 +109,7 @@ export class AutoMarkdownToc {
         }
 
         let tocRange = autoMarkdownToc.tocManager.getTocRange();
+        let insertOptions = autoMarkdownToc.getTocInsertOptions(tocRange, activeEditor.document);
 
         await activeEditor.edit(editBuilder => {
             if (!tocRange.isSingleLine) {
@@ -123,13 +124,11 @@ export class AutoMarkdownToc {
                 }
             }
 
-            autoMarkdownToc.createToc(
-                editBuilder,
-                headerList,
-                tocRange.start,
-                autoMarkdownToc.getTocInsertOptions(tocRange, activeEditor.document));
+            autoMarkdownToc.createToc(editBuilder, headerList, tocRange.start, insertOptions);
 
-            autoMarkdownToc.insertAnchors(editBuilder, headerList);
+            // The same useOrderedToc the rows were built with: an anchor has to
+            // target the slug its own TOC row links to.
+            autoMarkdownToc.insertAnchors(editBuilder, headerList, insertOptions.useOrderedToc);
         });
     }
 
@@ -241,42 +240,42 @@ export class AutoMarkdownToc {
     }
 
     /**
-     * insert anchor for a header
-     * @param editBuilder
-     * @param header
+     * Insert the anchor a header's own TOC row links to.
      */
-    private insertAnchor(editBuilder: TextEditorEdit, header: Header) {
-        let anchorMatches = header.tocRowWithAnchor(header.tocWithoutOrder).match(RegexStrings.Instance.REGEXP_ANCHOR);
-        if (anchorMatches !== null) {
-            // let name = anchorMatches[1];
-            let text = [
-                this.configManager.options.lineEnding,
-                '<a id="',
-                header.anchor.id,
-                '" name="',
-                header.anchor.name,
-                '"></a>'];
+    private insertAnchor(editBuilder: TextEditorEdit, header: Header, useOrderedToc: boolean) {
+        let anchor = header.anchorFor(this.getTocString(header, useOrderedToc));
 
-            let insertPosition = new Position(header.range.end.line, header.range.end.character);
-
-            if (this.configManager.options.ANCHOR_MODE.value === AnchorMode.bitbucket) {
-                text = text.slice(1);
-                text.push(this.configManager.options.lineEnding);
-                text.push(this.configManager.options.lineEnding);
-                insertPosition = new Position(header.range.start.line, 0);
-            }
-
-            editBuilder.insert(insertPosition, text.join(''));
+        if (anchor === undefined) {
+            return;
         }
+
+        let text = [
+            this.configManager.options.lineEnding,
+            '<a id="',
+            anchor.id,
+            '" name="',
+            anchor.name,
+            '"></a>'];
+
+        let insertPosition = new Position(header.range.end.line, header.range.end.character);
+
+        if (this.configManager.options.ANCHOR_MODE.value === AnchorMode.bitbucket) {
+            text = text.slice(1);
+            text.push(this.configManager.options.lineEnding);
+            text.push(this.configManager.options.lineEnding);
+            insertPosition = new Position(header.range.start.line, 0);
+        }
+
+        editBuilder.insert(insertPosition, text.join(''));
     }
 
-    private insertAnchors(editBuilder: TextEditorEdit, headerList: Header[]) {
+    private insertAnchors(editBuilder: TextEditorEdit, headerList: Header[], useOrderedToc: boolean) {
         if (!this.configManager.options.INSERT_ANCHOR.value) {
             return;
         }
 
         headerList.forEach(header => {
-            this.insertAnchor(editBuilder, header);
+            this.insertAnchor(editBuilder, header, useOrderedToc);
         });
     }
 
