@@ -436,6 +436,15 @@ class ConfigManager {
         }
         for (let index = 0; index < editor.document.lineCount; index++) {
             let lineText = editor.document.lineAt(index).text;
+            // #41 - "<!-- TOC ignore:true -->" also starts with TOC, so the
+            // first one of those above the TOC was read as the options line.
+            // It carries no options, and the loop stops at the first start
+            // marker, so the real "<!-- TOC depthFrom:2 ... -->" below it was
+            // never read and its options were dropped on the next update.
+            // TocManager.scanForTocRange already skips ignore markers this way.
+            if (lineText.match(RegexStrings_1.RegexStrings.Instance.REGEXP_IGNORE_TITLE)) {
+                continue;
+            }
             if (lineText.match(RegexStrings_1.RegexStrings.Instance.REGEXP_TOC_START)) {
                 let options = lineText.match(RegexStrings_1.RegexStrings.Instance.REGEXP_TOC_CONFIG);
                 if (options !== null) {

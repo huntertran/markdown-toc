@@ -224,12 +224,31 @@ async function perDocumentOptionsSurviveRepeatedRuns(): Promise<void> {
  * contain is not satisfied by the heading the row was generated from.
  */
 function tocBlock(text: string): string {
-    let start = text.search(/<!--\s*TOC\b/i);
-    let stop = text.search(/<!--\s*\/TOC\b/i);
+    let lines = text.split(EOL);
+    let start = -1;
+    let stop = -1;
+
+    for (let index = 0; index < lines.length; index++) {
+        // An "<!-- TOC ignore:true -->" is TOC-shaped but is not the start of
+        // the block, exactly as the extension treats it (#41).
+        if (/^\s*<!--\s*TOC\s+i(?:gn|ng)ore:true\s*-->/i.test(lines[index])) {
+            continue;
+        }
+
+        if (start === -1 && /^\s*<!--\s*TOC\b/i.test(lines[index])) {
+            start = index;
+            continue;
+        }
+
+        if (start !== -1 && /^\s*<!--\s*\/TOC\b/i.test(lines[index])) {
+            stop = index;
+            break;
+        }
+    }
 
     assert.ok(start !== -1 && stop > start, 'the document has to carry a TOC block');
 
-    return text.slice(start, stop);
+    return lines.slice(start, stop).join(EOL);
 }
 
 /**
@@ -696,6 +715,100 @@ async function missingIndentationFallsBackToTheVscodeDefault(): Promise<void> {
     console.log('  missing indentation settings fall back to four spaces');
 }
 
+/**
+ * #41 - an "<!-- TOC ignore:true -->" above the TOC block wiped the TOC's own
+ * options.
+ *
+ * loadCustomOptions stopped at the first line matching REGEXP_TOC_START, and
+ * the ignore marker matches it as well. That line carries no options, so
+ * optionsFlag stayed empty and the real start marker below it was never read -
+ * Insert/Update then rewrote "<!-- TOC depthFrom:2 ... -->" as a bare
+ * "<!-- TOC -->".
+ */
+async function ignoreMarkerAboveTheTocKeepsItsOptions(): Promise<void> {
+    configuration['markdown-toc']['updateOnSave'] = true;
+
+    let extension = new AutoMarkdownToc();
+    let doc = open('ignore_above_toc.md', [
+        '<!-- prettier-ignore-start -->',
+        '<!-- TOC ignore:true -->',
+        '## Table of Contents',
+        '<!-- prettier-ignore-end -->',
+        '',
+        '<!-- TOC depthFrom:2 depthTo:3 updateOnSave:false -->',
+        '',
+        '<!-- /TOC -->',
+        '',
+        '# Title',
+        '',
+        '## Resources',
+        '',
+        '### Run Locally',
+        '',
+        '#### Too deep'
+    ]);
+
+    await extension.updateMarkdownToc();
+
+    let text = doc.getText();
+
+    assert.strictEqual(extension.configManager.options.DEPTH_FROM.value, 2, 'depthFrom:2 has to be read from the TOC start marker');
+    assert.strictEqual(extension.configManager.options.DEPTH_TO.value, 3, 'depthTo:3 has to be read from the TOC start marker');
+    assert.strictEqual(extension.configManager.options.UPDATE_ON_SAVE.value, false, 'updateOnSave:false has to be read from the TOC start marker');
+
+    let rewritten = text.split(EOL)[5];
+
+    assert.ok(
+        rewritten.toLowerCase().indexOf('depthfrom:2') !== -1
+        && rewritten.toLowerCase().indexOf('depthto:3') !== -1
+        && rewritten.toLowerCase().indexOf('updateonsave:false') !== -1,
+        'the rewritten start marker must keep every option it carried, got ' + JSON.stringify(rewritten)
+    );
+
+    // The options were actually applied, not just echoed back into the marker.
+    assert.strictEqual(text.indexOf('[Title](#title)'), -1, 'depthFrom:2 keeps the "# Title" header out');
+    assert.strictEqual(text.indexOf('[Too deep](#too-deep)'), -1, 'depthTo:3 keeps the "#### Too deep" header out');
+    assert.ok(text.indexOf('- [Resources](#resources)') !== -1, 'the depth 2 header is in the TOC');
+
+    // The ignore marker still does its own job.
+    assert.strictEqual(
+        tocBlock(text).indexOf('Table of Contents'),
+        -1,
+        'the ignored heading must stay out of the TOC'
+    );
+
+    console.log('  an ignore marker above the TOC does not eat the TOC options');
+}
+
+/**
+ * The ignore marker must not be mistaken for the start of the TOC block when it
+ * is the only TOC-shaped comment above an unmarked document either: a document
+ * with no TOC block at all still gets one at the cursor.
+ */
+async function ignoreMarkerAloneIsNotATocStart(): Promise<void> {
+    let extension = new AutoMarkdownToc();
+    let doc = open('ignore_only.md', [
+        '<!-- TOC ignore:true -->',
+        '## Table of Contents',
+        '',
+        '## Kept'
+    ]);
+
+    await extension.updateMarkdownToc();
+
+    let text = doc.getText();
+
+    assert.ok(text.indexOf('<!-- /TOC -->') !== -1, 'a TOC block has to be written');
+    assert.ok(text.indexOf('- [Kept](#kept)') !== -1, 'the kept heading is in the TOC');
+    assert.strictEqual(tocBlock(text).indexOf('Table of Contents'), -1, 'the ignored heading stays out of the TOC');
+    assert.ok(
+        text.indexOf('<!-- TOC ignore:true -->') !== -1,
+        'the ignore marker itself has to survive the update'
+    );
+
+    console.log('  a lone ignore marker is not treated as the TOC start');
+}
+
 async function main(): Promise<void> {
     let tests = [
         updateOnSaveIsHonouredOnTheFirstSave,
@@ -703,6 +816,8 @@ async function main(): Promise<void> {
         documentLevelUpdateOnSaveWins,
         perDocumentOptionsDoNotLeak,
         perDocumentOptionsSurviveRepeatedRuns,
+        ignoreMarkerAboveTheTocKeepsItsOptions,
+        ignoreMarkerAloneIsNotATocStart,
         anchorsMatchTheirTocLinks,
         anchorsMatchUnorderedTocLinks,
         anchorsFollowDetectedNumbering,
