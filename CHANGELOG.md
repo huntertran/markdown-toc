@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [3.1.2] - 2026-09-07
+### Fixed:
+- [#72](https://github.com/huntertran/markdown-toc/issues/72): an unclosed `<!-- TOC -->` earlier in the document - such as the `<!-- TOC -->` / `<!--\TOC-->` pair suggested as a workaround in [#40](https://github.com/huntertran/markdown-toc/issues/40) - was taken as the start of the TOC block, so Insert/Update replaced everything down to the real block's `<!-- /TOC -->` and deleted the headers in between. The last start marker before the stop marker now wins, and a stray `<!-- /TOC -->` above the block no longer ends the scan
+- A header excluded by `<!-- TOC ignore:true -->` no longer sets the TOC's baseline indentation. Ignoring a document's only `h1` used to push every remaining `h2` one level to the right
+
 ## [3.1.1] - 2026-09-07
 ### Fixed:
 - [#38](https://github.com/huntertran/markdown-toc/issues/38), [#16](https://github.com/huntertran/markdown-toc/issues/16): a header that is only a version number (`# 1.1.1`) was read as the section number `1.` plus the title `1`, so 3.1.0's renumbering rewrote it. A section number now has to be followed by whitespace, and such a document is no longer treated as numbered. A CHANGELOG survives a save again

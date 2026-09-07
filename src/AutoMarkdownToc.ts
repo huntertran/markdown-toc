@@ -318,19 +318,19 @@ export class AutoMarkdownToc {
         text = text.concat(this.generateTocStartIndicator());
 
         //// HEADERS
-        let minimumRenderedDepth = headerList[0].depth;
-        headerList.forEach(header => {
-            minimumRenderedDepth = Math.min(minimumRenderedDepth, header.depth);
-        });
+        // Only the headers that actually make it into the TOC may set the
+        // baseline indentation. Counting ignored headers here meant a
+        // `<!-- TOC ignore:true -->` on the document's only h1 still pushed
+        // every remaining h2 one level to the right.
+        let renderedHeaders = headerList.filter(header =>
+            header.depth >= this.configManager.options.DEPTH_FROM.value && !header.isIgnored);
 
-        let tocRows: string[] = [];
+        let minimumRenderedDepth = renderedHeaders.length > 0
+            ? renderedHeaders.reduce((depth, header) => Math.min(depth, header.depth), renderedHeaders[0].depth)
+            : headerList[0].depth;
 
-        headerList.forEach(header => {
-            if (header.depth >= this.configManager.options.DEPTH_FROM.value && !header.isIgnored) {
-                let row = this.generateTocRow(header, minimumRenderedDepth, options.useOrderedToc);
-                tocRows.push(row);
-            }
-        });
+        let tocRows: string[] = renderedHeaders.map(header =>
+            this.generateTocRow(header, minimumRenderedDepth, options.useOrderedToc));
 
         text.push(tocRows.join(this.configManager.options.lineEnding));
 

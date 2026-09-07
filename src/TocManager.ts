@@ -40,12 +40,25 @@ export class TocManager {
 
             let lineText = doc.lineAt(index).text;
 
-            if ((start === undefined) && (lineText.match(RegexStrings.Instance.REGEXP_TOC_START) && !lineText.match(RegexStrings.Instance.REGEXP_IGNORE_TITLE))) {
-                start = new Position(index, 0);
+            if (lineText.match(RegexStrings.Instance.REGEXP_TOC_STOP)) {
+                // A stop marker only closes a block that has been opened. A
+                // stray <!-- /TOC --> above the real block used to end the scan
+                // with no start, which dropped the update at the cursor instead.
+                if (start !== undefined) {
+                    end = new Position(index, lineText.length);
+                    break;
+                }
+
+                continue;
             }
-            else if (lineText.match(RegexStrings.Instance.REGEXP_TOC_STOP)) {
-                end = new Position(index, lineText.length);
-                break;
+
+            if (lineText.match(RegexStrings.Instance.REGEXP_TOC_START) && !lineText.match(RegexStrings.Instance.REGEXP_IGNORE_TITLE)) {
+                // The LAST start marker before the stop marker wins. Keeping
+                // the first one meant an unclosed <!-- TOC --> earlier in the
+                // document - such as the two-line block suggested as a
+                // workaround in #40 - swallowed everything down to the real
+                // block's <!-- /TOC -->, deleting the headers in between.
+                start = new Position(index, 0);
             }
         }
 
