@@ -1,9 +1,14 @@
 .vscode/**
 .vscode-test/**
+.claude/**
+.github/**
 out/**
 test/**
 plan/**
+deprecated/**
+target/**
 node_modules/**
+*.vsix
 pnpm-lock.yaml
 src/**
 .gitignore

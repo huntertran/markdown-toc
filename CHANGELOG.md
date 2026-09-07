@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [3.1.1] - 2026-09-07
+### Fixed:
+- [#38](https://github.com/huntertran/markdown-toc/issues/38), [#16](https://github.com/huntertran/markdown-toc/issues/16): a header that is only a version number (`# 1.1.1`) was read as the section number `1.` plus the title `1`, so 3.1.0's renumbering rewrote it. A section number now has to be followed by whitespace, and such a document is no longer treated as numbered. A CHANGELOG survives a save again
+- [#18](https://github.com/huntertran/markdown-toc/issues/18): headers above `depthFrom` were given numbers the user never wrote, and numbering restarted after them. Numbering now starts at `depthFrom` and continues across those headers
+- [#50](https://github.com/huntertran/markdown-toc/issues/50): an HTML comment that merely mentioned the tool registered as the TOC start marker, so everything down to `<!-- /TOC -->` was replaced on the next update. The markers must now begin the line and start with `TOC`
+- [#53](https://github.com/huntertran/markdown-toc/issues/53): `updateOnSave:false` was ignored until some unrelated command happened to load the settings, because the save handler read the setting before the configuration
+- The save handler awaits the TOC update before saving. It used to start both at once, so the save could write the pre-update text and the loop guard could be set after the save it was meant to guard
+- [#41](https://github.com/huntertran/markdown-toc/issues/41): options set in one document's `<!-- TOC ... -->` marker kept applying to every other document for the rest of the session
+- [#10](https://github.com/huntertran/markdown-toc/issues/10), [#33](https://github.com/huntertran/markdown-toc/issues/33): a TOC row and the anchor it targets were produced by two different slug algorithms, so they agreed only for an unnumbered, punctuation-free heading. The anchor is now derived from the row that links to it, which keeps the two in step on the ordered, detected-numbering and `unicodeAnchors` paths as well
+- [#69](https://github.com/huntertran/markdown-toc/issues/69), [#67](https://github.com/huntertran/markdown-toc/issues/67): parentheses were stripped from titles (`### bar (info)` became `bar info`); an inline image's alt text was pulled into the TOC row instead of being dropped; and a title carrying two links kept only one of them
+- [#55](https://github.com/huntertran/markdown-toc/issues/55): the open editor's own indentation — where `editor.detectIndentation` and EditorConfig put their answer — was never consulted, and a tab-indented document was still indented with spaces once a spaces-indented one had been opened in the same session. Indentation is now resolved from the active editor, then `[markdown]`-scoped settings, then `editor.*`
+
 ## [3.1.0] - 2026-09-06
 ### New:
 - Header numbering is applied again on Insert/Update TOC: a document that already numbers its headers (`# 1. Section`) has those numbers corrected on every update, and its TOC rows are numbered to match, without needing `orderedList`. Controlled by `detectAndAutoSetSection`; documents that do not number their headers are left untouched
