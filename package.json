@@ -157,8 +157,9 @@
         "watch-tests": "tsc -p . -w --outDir out",
         "pretest": "npm run compile-tests && npm run compile && npm run lint",
         "lint": "eslint src --ext ts",
-        "test": "node ./out/test/runTest.js && node ./out/test/manual/runManualTests.js",
-        "test:manual": "node ./out/test/manual/runManualTests.js"
+        "test": "node ./out/test/runTest.js && node ./out/test/manual/runBehaviorTests.js && node ./out/test/manual/runManualTests.js",
+        "test:manual": "node ./out/test/manual/runManualTests.js",
+        "test:behavior": "node ./out/test/manual/runBehaviorTests.js"
     },
     "dependencies": {
         "anchor-markdown-header": "^0.8.4"

@@ -18,8 +18,8 @@ export function activate(context: ExtensionContext) {
     let deleteMarkdownSections = commands.registerCommand('extension.deleteMarkdownSections', () => { autoMarkdownToc.deleteMarkdownSections(); });
 
     // Events
-    let saveMarkdownToc = workspace.onDidSaveTextDocument(() => {
-        autoMarkdownToc.onDidSaveTextDocument();
+    let saveMarkdownToc = workspace.onDidSaveTextDocument(async () => {
+        await autoMarkdownToc.onDidSaveTextDocument();
     });
     let changedTextDocument = workspace.onDidChangeTextDocument((event: TextDocumentChangeEvent) => {
         autoMarkdownToc.onDidChangeTextDocument(event);

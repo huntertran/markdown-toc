@@ -20,6 +20,26 @@ export class Options {
     readonly BULLET_CHAR: Dictionary = new Dictionary("bulletCharacter", "-");
     readonly DETECT_AUTO_SET_SECTION: Dictionary = new Dictionary("detectAndAutoSetSection", true);
 
+    /**
+     * Every setting a `<!-- TOC ... -->` line can override. loadCustomOptions
+     * clears their uniqueValue through this, so overrides read from one
+     * document stop applying to the next one.
+     */
+    get allSettings(): Dictionary[] {
+        return [
+            this.DEPTH_FROM,
+            this.DEPTH_TO,
+            this.INSERT_ANCHOR,
+            this.WITH_LINKS,
+            this.ORDERED_LIST,
+            this.UPDATE_ON_SAVE,
+            this.ANCHOR_MODE,
+            this.UNICODE_ANCHORS,
+            this.BULLET_CHAR,
+            this.DETECT_AUTO_SET_SECTION
+        ];
+    }
+
     extensionName: string = "markdown-toc";
     readonly EOL = require('os').EOL;
 

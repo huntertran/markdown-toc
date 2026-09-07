@@ -57,6 +57,14 @@ export class ConfigManager {
     public loadCustomOptions() {
         this.options.optionsFlag = [];
 
+        // Per document overrides belong to the document they were read from.
+        // Without this reset a `<!-- TOC depthFrom:2 -->` in one file kept
+        // applying to every other file for the rest of the session, because
+        // Dictionary.value prefers uniqueValue whenever it is not undefined.
+        this.options.allSettings.forEach(setting => {
+            setting.uniqueValue = undefined;
+        });
+
         let editor = window.activeTextEditor;
         if (editor === undefined) {
             return;

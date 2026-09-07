@@ -37,11 +37,7 @@ export class AutoMarkdownToc {
         }
     }
 
-    public onDidSaveTextDocument() {
-        if (!this.configManager.options.UPDATE_ON_SAVE.value) {
-            return;
-        }
-
+    public async onDidSaveTextDocument() {
         // Prevent save loop
         if (this.configManager.options.isProgrammaticallySave) {
             this.configManager.options.isProgrammaticallySave = false;
@@ -49,20 +45,35 @@ export class AutoMarkdownToc {
         }
 
         let editor = window.activeTextEditor;
-        if (editor !== undefined) {
-            let doc = editor.document;
+        if (editor === undefined) {
+            return;
+        }
 
-            if (doc.languageId !== 'markdown') {
-                return;
-            }
+        let doc = editor.document;
 
-            let tocRange = this.tocManager.getTocRange();
+        if (doc.languageId !== 'markdown') {
+            return;
+        }
 
-            if (!tocRange.isSingleLine) {
-                this.updateMarkdownToc();
-                this.configManager.options.isProgrammaticallySave = true;
-                doc.save();
-            }
+        // updateOnSave has to be read from the real settings before it is
+        // trusted. Until updateOptions() has run at least once, workspaceValue
+        // is still the Dictionary constructor default (true), so a user who
+        // turned the setting off had their document rewritten on save anyway
+        // until some other command happened to load the configuration.
+        this.configManager.updateOptions();
+
+        if (!this.configManager.options.UPDATE_ON_SAVE.value) {
+            return;
+        }
+
+        let tocRange = this.tocManager.getTocRange();
+
+        if (!tocRange.isSingleLine) {
+            // Both awaited: the save has to see the rewritten document, and the
+            // isProgrammaticallySave flag has to be set before it fires.
+            await this.updateMarkdownToc();
+            this.configManager.options.isProgrammaticallySave = true;
+            await doc.save();
         }
     }
 
