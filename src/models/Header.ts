@@ -41,10 +41,13 @@ export class Header {
         let headerTextSplit = symbol.name.match(RegexStrings.Instance.REGEXP_HEADER_META);
 
         if (headerTextSplit !== null) {
+            // Group 2 is optional, so it is undefined for an unnumbered header.
+            let detectedOrder = headerTextSplit[2] === undefined ? "" : headerTextSplit[2];
+
             this.headerMark = headerTextSplit[1];
-            this.orderedListString = headerTextSplit[2];
-            this.detectedOrderString = headerTextSplit[2];
-            this.dirtyTitle = headerTextSplit[4];
+            this.orderedListString = detectedOrder;
+            this.detectedOrderString = detectedOrder;
+            this.dirtyTitle = headerTextSplit[3];
         }
 
         this.range = new Range(symbol.range.start, new Position(symbol.range.start.line, symbol.name.length));
@@ -77,6 +80,12 @@ export class Header {
     }
 
     public get tocWithOrder(): string {
+        // A header above the numbering root (depth < depthFrom) takes no number.
+        // Without this guard it would be rewritten as "# . Title".
+        if (this.orderArray.length === 0) {
+            return this.tocWithoutOrder;
+        }
+
         return this.orderArray.join('.') + ". " + this.tocWithoutOrder;
     }
 

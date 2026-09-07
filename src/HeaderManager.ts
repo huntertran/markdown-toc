@@ -65,7 +65,7 @@ export class HeaderManager {
 
                 header.isIgnored = this.getIsHeaderIgnored(header, editor);
                 header.orderArray = this.calculateHeaderOrder(header, headerList);
-                header.orderedListString = header.orderArray.join('.') + ".";
+                header.orderedListString = this.buildOrderedListString(header.orderArray);
 
                 if (header.depth <= this.configManager.options.DEPTH_TO.value) {
                     headerList.push(header);
@@ -143,7 +143,7 @@ export class HeaderManager {
                 header.isIgnored = this.getIsHeaderIgnored(header, editor);
 
                 header.orderArray = this.calculateHeaderOrder(header, headerList);
-                header.orderedListString = header.orderArray.join('.') + ".";
+                header.orderedListString = this.buildOrderedListString(header.orderArray);
 
                 if (header.depth <= this.configManager.options.DEPTH_TO.value) {
                     headerList.push(header);
@@ -168,25 +168,61 @@ export class HeaderManager {
         }
     }
 
-    public calculateHeaderOrder(headerBeforePushToList: Header, headerList: Header[]) {
+    /**
+     * The depth section numbering starts at. The README has always described
+     * numbering as beginning at depthFrom, but the numbering itself used to
+     * start at depth 1 regardless, which shifted every level and handed a
+     * number to headers depthFrom excludes from the TOC altogether.
+     */
+    private getNumberingRootDepth(): number {
+        return Math.max(1, this.configManager.options.DEPTH_FROM.value);
+    }
 
-        if (headerList.length === 0) {
-            // special case: First header
-            let orderArray = new Array(headerBeforePushToList.depth);
-            orderArray[headerBeforePushToList.depth - 1] = 1;
-            return orderArray;
+    /**
+     * The first numbered header at a given depth: "1", "1.1", "1.1.1" ...
+     * Length is relative to the numbering root. Every level is seeded with 1
+     * because `new Array(n)` alone leaves holes, which join() renders as "..1".
+     */
+    private createFirstOrderArray(depth: number, rootDepth: number): number[] {
+        return new Array(Math.max(1, depth - rootDepth + 1)).fill(1);
+    }
+
+    private buildOrderedListString(orderArray: number[]): string {
+        if (orderArray.length === 0) {
+            return "";
         }
 
-        let lastHeaderInList = headerList[headerList.length - 1];
+        return orderArray.join('.') + ".";
+    }
+
+    public calculateHeaderOrder(headerBeforePushToList: Header, headerList: Header[]) {
+        let rootDepth = this.getNumberingRootDepth();
+
+        if (headerBeforePushToList.depth < rootDepth) {
+            // Above the numbering root, so not part of the numbering at all.
+            // An empty order array is what tells Header to leave the text alone.
+            return [];
+        }
+
+        // Headers above the root take no part in the numbering, so they must not
+        // be mistaken for the previous sibling or the parent of a numbered one.
+        let numberedHeaders = headerList.filter(header => header.orderArray.length > 0);
+
+        if (numberedHeaders.length === 0) {
+            // special case: First header
+            return this.createFirstOrderArray(headerBeforePushToList.depth, rootDepth);
+        }
+
+        let lastHeaderInList = numberedHeaders[numberedHeaders.length - 1];
 
         if (headerBeforePushToList.depth < lastHeaderInList.depth) {
             // continue of the parent level
 
             let previousHeader: Header | undefined;
 
-            for (let index = headerList.length - 1; index >= 0; index--) {
-                if (headerList[index].depth === headerBeforePushToList.depth) {
-                    previousHeader = headerList[index];
+            for (let index = numberedHeaders.length - 1; index >= 0; index--) {
+                if (numberedHeaders[index].depth === headerBeforePushToList.depth) {
+                    previousHeader = numberedHeaders[index];
                     break;
                 }
             }
@@ -198,9 +234,7 @@ export class HeaderManager {
                 return orderArray;
             } else {
                 // special case: first header has greater level than second header
-                let orderArray = new Array(headerBeforePushToList.depth);
-                orderArray[headerBeforePushToList.depth - 1] = 1;
-                return orderArray;
+                return this.createFirstOrderArray(headerBeforePushToList.depth, rootDepth);
             }
         }
 
