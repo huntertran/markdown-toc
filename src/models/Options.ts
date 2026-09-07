@@ -43,12 +43,19 @@ export class Options {
     extensionName: string = "markdown-toc";
     readonly EOL = require('os').EOL;
 
+    // Indentation to fall back on when neither the active editor nor the
+    // settings answer with a usable value. vscode's own defaults, so a TOC
+    // matches what the editor itself would have inserted.
+    readonly DEFAULT_TAB_SIZE: number = 4;
+    readonly DEFAULT_INSERT_SPACES: boolean = true;
+
     // language configuration
     lineEnding: string = "";
-    tabSize: number = 2;
-    insertSpaces: boolean = false;
+    tabSize: number = this.DEFAULT_TAB_SIZE;
+    insertSpaces: boolean = this.DEFAULT_INSERT_SPACES;
     autoSave: boolean = false;
 
-    // special characters
+    // special characters. Recomputed from tabSize/insertSpaces on every
+    // updateOptions(); see ConfigManager.loadIndentation.
     tab = '\t';
 }

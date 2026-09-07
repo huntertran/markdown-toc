@@ -4,7 +4,7 @@
     - [1.1. Alpha, Beta](#11-alpha-beta)
     - [1.2. Gamma & Delta](#12-gamma--delta)
     - [1.3. What's New?](#13-whats-new)
-    - [1.4. Trailing spaces and parentheses](#14-trailing-spaces-and-parentheses)
+    - [1.4. Trailing spaces and (parentheses)](#14-trailing-spaces-and-parentheses)
 
 <!-- /TOC -->
 
@@ -35,5 +35,5 @@ Apostrophes and question marks disappear from the slug entirely.
 ## Trailing spaces and (parentheses)
 <a id="markdown-14-trailing-spaces-and-parentheses" name="14-trailing-spaces-and-parentheses"></a>
 
-cleanUpTitle strips the parentheses before either side sees the title, so both
-halves have to agree on the stripped form.
+The row keeps the parentheses (#69); only the slug drops them. Both halves
+have to agree on that same slug.

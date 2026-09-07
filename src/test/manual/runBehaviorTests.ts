@@ -20,10 +20,17 @@ const { AutoMarkdownToc } = require('../../AutoMarkdownToc');
 
 const EOL = '\n';
 
-function open(name: string, lines: string[]): TextDocument {
+function open(
+    name: string,
+    lines: string[],
+    editorOptions: { tabSize?: number | string, insertSpaces?: boolean | string } = {}
+): TextDocument {
     let doc = new TextDocument(name, lines.join(EOL), EOL);
+    let editor = new TextEditor(doc);
 
-    state.activeTextEditor = new TextEditor(doc);
+    editor.options = editorOptions;
+
+    state.activeTextEditor = editor;
     state.symbolProvider = () => buildSymbols(doc);
     state.messages = [];
     configuration['files']['eol'] = EOL;
@@ -213,6 +220,19 @@ async function perDocumentOptionsSurviveRepeatedRuns(): Promise<void> {
 }
 
 /**
+ * Just the generated TOC block, so an assertion about what a row must NOT
+ * contain is not satisfied by the heading the row was generated from.
+ */
+function tocBlock(text: string): string {
+    let start = text.search(/<!--\s*TOC\b/i);
+    let stop = text.search(/<!--\s*\/TOC\b/i);
+
+    assert.ok(start !== -1 && stop > start, 'the document has to carry a TOC block');
+
+    return text.slice(start, stop);
+}
+
+/**
  * Every "](#slug)" the TOC links to, in document order.
  */
 function tocLinkTargets(text: string): string[] {
@@ -370,6 +390,312 @@ async function unicodeAnchorsStillMatch(): Promise<void> {
     console.log('  unicodeAnchors applies to the link and the anchor alike');
 }
 
+/**
+ * #69 - cleanUpTitle stripped every "(" and ")" from the title, so a heading
+ * such as "### bar (info)" rendered as "bar info" in the TOC. The parentheses
+ * belong to the title; only the slug drops them.
+ */
+async function parenthesesStayInTheTocRow(): Promise<void> {
+    let extension = new AutoMarkdownToc();
+    let doc = open('title_parentheses.md', [
+        '<!-- TOC insertAnchor:true -->',
+        '',
+        '<!-- /TOC -->',
+        '',
+        '## foo',
+        '',
+        '### bar (info)'
+    ]);
+
+    await extension.updateMarkdownToc();
+
+    let text = doc.getText();
+
+    assert.ok(text.indexOf('- [bar (info)](#bar-info)') !== -1, 'the TOC row keeps the parentheses');
+    assert.strictEqual(text.indexOf('[bar info]'), -1, 'the parentheses must not be stripped from the row');
+    assert.deepStrictEqual(tocLinkTargets(text), ['foo', 'bar-info'], 'the slug still drops the parentheses');
+    assert.deepStrictEqual(anchorNames(text), tocLinkTargets(text), 'the anchor follows the row');
+
+    console.log('  parentheses survive in the TOC row and stay out of the slug');
+}
+
+/**
+ * A title that is nothing but parenthesised text still has to produce a row,
+ * and the header itself is never rewritten from the cleaned title.
+ */
+async function parenthesesDoNotEmptyATitle(): Promise<void> {
+    let extension = new AutoMarkdownToc();
+    let doc = open('title_parentheses_only.md', [
+        '<!-- TOC -->',
+        '',
+        '<!-- /TOC -->',
+        '',
+        '# (draft)',
+        '',
+        '## a (b) c (d)'
+    ]);
+
+    await extension.updateMarkdownToc();
+
+    let text = doc.getText();
+
+    assert.ok(text.indexOf('- [(draft)](#draft)') !== -1, 'a fully parenthesised title keeps its parentheses');
+    assert.ok(text.indexOf('- [a (b) c (d)](#a-b-c-d)') !== -1, 'every pair of parentheses is kept');
+    assert.ok(text.indexOf('# (draft)') !== -1, 'the header line itself is untouched');
+
+    console.log('  parenthesised titles round-trip');
+}
+
+/**
+ * #67 - an image renders as a picture, so its alt text is not part of the
+ * heading text. A badge wrapped in a link, which is how the issue writes it,
+ * has to disappear from the row completely rather than leaving the alt text or
+ * an empty "[](href)" behind.
+ */
+async function imageAltTextStaysOutOfTheTocRow(): Promise<void> {
+    let extension = new AutoMarkdownToc();
+    let doc = open('title_image.md', [
+        '<!-- TOC insertAnchor:true -->',
+        '',
+        '<!-- /TOC -->',
+        '',
+        '## Choosing a task [![Join the chat at https://gitter.im/JabRef/jabref]'
+        + '(https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/JabRef/jabref)',
+        '',
+        '## Build ![status](https://example.com/badge.svg) status'
+    ]);
+
+    await extension.updateMarkdownToc();
+
+    let text = doc.getText();
+    let toc = tocBlock(text);
+
+    assert.ok(toc.indexOf('- [Choosing a task](#choosing-a-task)') !== -1, 'the linked badge leaves no text behind');
+    assert.strictEqual(toc.indexOf('Join the chat'), -1, 'the alt text must not reach the TOC');
+    assert.strictEqual(toc.indexOf('badges.gitter.im'), -1, 'the image target must not reach the TOC');
+    assert.strictEqual(toc.indexOf('[]('), -1, 'the emptied link must not survive as "[](href)"');
+
+    assert.ok(
+        toc.indexOf('- [Build status](#build-status)') !== -1,
+        'an image in the middle of a title leaves a single space behind'
+    );
+
+    assert.deepStrictEqual(anchorNames(text), tocLinkTargets(toc), 'the anchors follow the cleaned rows');
+
+    console.log('  image alt text is kept out of the TOC row');
+}
+
+/**
+ * The link rule still has to keep the text of an ordinary link, including when
+ * a title carries two of them - the old greedy pattern merged everything
+ * between the first "[" and the last ")" into one match.
+ */
+async function ordinaryLinksKeepTheirText(): Promise<void> {
+    let extension = new AutoMarkdownToc();
+    let doc = open('title_links.md', [
+        '<!-- TOC -->',
+        '',
+        '<!-- /TOC -->',
+        '',
+        '# See [the docs](https://example.com/docs) and [the API](https://example.com/api)'
+    ]);
+
+    await extension.updateMarkdownToc();
+
+    let toc = tocBlock(doc.getText());
+
+    assert.ok(
+        toc.indexOf('- [See the docs and the API](#see-the-docs-and-the-api)') !== -1,
+        'both link texts survive and both targets are dropped'
+    );
+
+    assert.strictEqual(toc.indexOf('example.com'), -1, 'no link target reaches the TOC row');
+
+    console.log('  two links in one title both keep their text');
+}
+
+/**
+ * A three level document, so one nesting step is visible on its own.
+ */
+function nestedDocument(): string[] {
+    return [
+        '<!-- TOC -->',
+        '',
+        '<!-- /TOC -->',
+        '',
+        '# Top',
+        '',
+        '## Middle',
+        '',
+        '### Leaf'
+    ];
+}
+
+/**
+ * The indentation in front of each TOC row, deepest row last.
+ */
+function rowIndents(text: string): string[] {
+    return tocBlock(text)
+        .split(EOL)
+        .filter(line => /^\s*[-*+]\s/.test(line))
+        .map(line => (/^\s*/.exec(line) as RegExpExecArray)[0]);
+}
+
+/**
+ * Restores the workspace indentation settings the other tests rely on.
+ */
+function setIndentSettings(
+    tabSize: unknown,
+    insertSpaces: unknown,
+    markdownScope: { [key: string]: unknown } = {}
+): void {
+    configuration['editor']['tabSize'] = tabSize;
+    configuration['editor']['insertSpaces'] = insertSpaces;
+    configuration['[markdown]'] = Object.assign({}, markdownScope);
+}
+
+/**
+ * #55 - the TOC was indented by the *configured* tab size, not by the width the
+ * open editor is actually using. `editor.detectIndentation` (on by default) and
+ * the EditorConfig extension both answer by setting the editor's own options,
+ * which is what the reporter's status bar showed and the settings did not.
+ */
+async function editorIndentationWinsOverTheSettings(): Promise<void> {
+    setIndentSettings(4, true);
+
+    let extension = new AutoMarkdownToc();
+    let doc = open('indent_editor.md', nestedDocument(), { tabSize: 2, insertSpaces: true });
+
+    await extension.updateMarkdownToc();
+
+    assert.deepStrictEqual(
+        rowIndents(doc.getText()),
+        ['', '  ', '    '],
+        'the open editor indents two spaces per level even though the settings say four'
+    );
+
+    console.log('  the open editor indentation beats the configured one');
+}
+
+/**
+ * With no editor answer the language scoped setting is next, ahead of the plain
+ * editor.* one.
+ */
+async function markdownScopedIndentationIsUsed(): Promise<void> {
+    // Settings keys, so they carry vscode's own dotted spelling.
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    setIndentSettings(4, true, { 'editor.tabSize': 3, 'editor.insertSpaces': true });
+
+    let extension = new AutoMarkdownToc();
+    let doc = open('indent_markdown_scope.md', nestedDocument());
+
+    await extension.updateMarkdownToc();
+
+    assert.deepStrictEqual(
+        rowIndents(doc.getText()),
+        ['', '   ', '      '],
+        '"[markdown]": { "editor.tabSize": 3 } is what a markdown file is indented with'
+    );
+
+    setIndentSettings(4, true);
+
+    console.log('  a "[markdown]" scoped tab size is honoured');
+}
+
+/**
+ * insertSpaces:false means a literal tab, whichever source said so.
+ */
+async function tabIndentationIsHonoured(): Promise<void> {
+    setIndentSettings(4, true);
+
+    let extension = new AutoMarkdownToc();
+    let doc = open('indent_tabs.md', nestedDocument(), { tabSize: 4, insertSpaces: false });
+
+    await extension.updateMarkdownToc();
+
+    assert.deepStrictEqual(
+        rowIndents(doc.getText()),
+        ['', '\t', '\t\t'],
+        'insertSpaces:false indents with one tab per level, not with tabSize spaces'
+    );
+
+    console.log('  insertSpaces:false indents with tabs');
+}
+
+/**
+ * Options.tab used to be written only on the spaces branch, so it kept whatever
+ * the last spaces document had set for the rest of the session. Same shape as
+ * the per-document option leak in §5.2.
+ */
+async function indentationDoesNotStickAcrossDocuments(): Promise<void> {
+    setIndentSettings(4, true);
+
+    let extension = new AutoMarkdownToc();
+
+    let spacesDoc = open('indent_leak_source.md', nestedDocument(), { tabSize: 2, insertSpaces: true });
+    await extension.updateMarkdownToc();
+    assert.deepStrictEqual(rowIndents(spacesDoc.getText()), ['', '  ', '    ']);
+
+    // Same extension instance, a document the editor indents with tabs.
+    let tabsDoc = open('indent_leak_target.md', nestedDocument(), { tabSize: 4, insertSpaces: false });
+    await extension.updateMarkdownToc();
+
+    assert.deepStrictEqual(
+        rowIndents(tabsDoc.getText()),
+        ['', '\t', '\t\t'],
+        'a tab indented document must not inherit the spaces of the document before it'
+    );
+
+    console.log('  indentation does not leak from one document into the next');
+}
+
+/**
+ * vscode types these as `number | string` and `boolean | string`, so "auto" is
+ * a value they can hold. An unusable candidate is skipped rather than coerced,
+ * and the next source answers.
+ */
+async function unusableEditorIndentationFallsThrough(): Promise<void> {
+    setIndentSettings(2, true);
+
+    let extension = new AutoMarkdownToc();
+    let doc = open('indent_auto.md', nestedDocument(), { tabSize: 'auto', insertSpaces: 'auto' });
+
+    await extension.updateMarkdownToc();
+
+    assert.deepStrictEqual(
+        rowIndents(doc.getText()),
+        ['', '  ', '    '],
+        'an "auto" editor option falls through to the configured tab size'
+    );
+
+    setIndentSettings(4, true);
+
+    console.log('  an unusable editor indentation falls through to the settings');
+}
+
+/**
+ * With nothing to read anywhere, the fallback is vscode's own default rather
+ * than whatever the previous document happened to leave behind.
+ */
+async function missingIndentationFallsBackToTheVscodeDefault(): Promise<void> {
+    setIndentSettings(undefined, undefined);
+
+    let extension = new AutoMarkdownToc();
+    let doc = open('indent_missing.md', nestedDocument());
+
+    await extension.updateMarkdownToc();
+
+    assert.deepStrictEqual(
+        rowIndents(doc.getText()),
+        ['', '    ', '        '],
+        'four spaces, which is what vscode itself would have inserted'
+    );
+
+    setIndentSettings(4, true);
+
+    console.log('  missing indentation settings fall back to four spaces');
+}
+
 async function main(): Promise<void> {
     let tests = [
         updateOnSaveIsHonouredOnTheFirstSave,
@@ -380,7 +706,17 @@ async function main(): Promise<void> {
         anchorsMatchTheirTocLinks,
         anchorsMatchUnorderedTocLinks,
         anchorsFollowDetectedNumbering,
-        unicodeAnchorsStillMatch
+        unicodeAnchorsStillMatch,
+        parenthesesStayInTheTocRow,
+        parenthesesDoNotEmptyATitle,
+        imageAltTextStaysOutOfTheTocRow,
+        ordinaryLinksKeepTheirText,
+        editorIndentationWinsOverTheSettings,
+        markdownScopedIndentationIsUsed,
+        tabIndentationIsHonoured,
+        indentationDoesNotStickAcrossDocuments,
+        unusableEditorIndentationFallsThrough,
+        missingIndentationFallsBackToTheVscodeDefault
     ];
 
     // An optional substring argument runs a subset, which is how each test was

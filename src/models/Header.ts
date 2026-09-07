@@ -110,9 +110,28 @@ export class Header {
     }
 
     private cleanUpTitle(dirtyTitle: string) {
-        let title = dirtyTitle.replace(/\[(.+)]\([^)]*\)/gi, "$1"); // replace link
+        // #67 - an image in a heading renders as a picture and contributes no
+        // text, so its alt text must not reach the TOC row. Images go first so
+        // that a badge wrapped in a link, "[![alt](image)](href)", collapses to
+        // an empty link that the link rule below then removes outright.
+        let title = dirtyTitle.replace(/!\[[^\]]*\]\([^)]*\)/g, "");
+
+        // The link text is what renders, so keep it and drop the target. The
+        // text group accepts the empty string, otherwise a link emptied by the
+        // image rule would survive as a literal "[](href)". Matching the text
+        // with [^\]]* rather than .+ also keeps two links on one line from
+        // being swallowed by a single greedy match.
+        title = title.replace(/\[([^\]]*)\]\([^)]*\)/g, "$1");
+
         title = title.replace(/<!--.+-->/gi, ""); // replace comment
-        title = title.replace(/\#*`|\(|\)/gi, "").trim(); // replace special char
-        return title;
+
+        // #69 - parentheses used to be stripped here, which turned
+        // "bar (info)" into "bar info". They are ordinary title text;
+        // anchor-markdown-header already drops them when it builds the slug.
+        title = title.replace(/#*`/g, ""); // replace special char
+
+        // Removing an image or a comment from the middle of a title leaves the
+        // whitespace that surrounded it behind.
+        return title.replace(/\s+/g, " ").trim();
     }
 }

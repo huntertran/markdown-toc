@@ -240,6 +240,12 @@ export class TextEditor {
     document: TextDocument;
     selection: { active: Position, anchor: Position };
 
+    // The open editor's own indentation, which is where editor.detectIndentation
+    // and the EditorConfig extension put their answer. Empty by default, so a
+    // test that does not set it falls back to `configuration` the way a real
+    // editor falls back to the settings.
+    options: { tabSize?: number | string, insertSpaces?: boolean | string } = {};
+
     constructor(document: TextDocument) {
         this.document = document;
         this.selection = { active: new Position(0, 0), anchor: new Position(0, 0) };

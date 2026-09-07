@@ -31,23 +31,84 @@ export class ConfigManager {
             this.options.lineEnding = <string>this.options.EOL;
         }
 
-        this.options.tabSize = <number>workspace.getConfiguration("[markdown]", null)["editor.tabSize"];
-        if (this.options.tabSize === undefined || this.options.tabSize === null) {
-            this.options.tabSize = <number>workspace.getConfiguration("editor", null).get("tabSize");
-        }
-
-        this.options.insertSpaces = <boolean>workspace.getConfiguration("[markdown]", null)["editor.insertSpaces"];
-        if (this.options.insertSpaces === undefined || this.options.insertSpaces === null) {
-            this.options.insertSpaces = <boolean>workspace.getConfiguration("editor", null).get("insertSpaces");
-        }
-
-        if (this.options.insertSpaces && this.options.tabSize > 0) {
-            this.options.tab = " ".repeat(this.options.tabSize);
-        }
+        this.loadIndentation();
 
         if (<string>workspace.getConfiguration("files", null).get("autoSave") !== "off") {
             this.options.autoSave = true;
         }
+    }
+
+    /**
+     * Resolves the indentation one TOC nesting level is written with.
+     *
+     * #55 - only the *configured* settings were consulted, so a document whose
+     * effective indentation came from anywhere else was indented by the
+     * configured default instead. Both `editor.detectIndentation` (on by
+     * default, and it infers the width from the file itself) and the
+     * EditorConfig extension work by setting the open editor's own options, not
+     * the settings. Those options are what the status bar reports and what a
+     * user means by "my indent setting", so the active editor is asked first
+     * and the settings are the fallback for when there is no editor.
+     */
+    private loadIndentation() {
+        let editorOptions = window.activeTextEditor === undefined
+            ? undefined
+            : window.activeTextEditor.options;
+
+        // Language scoped settings, "[markdown]": { "editor.tabSize": 2 }, are
+        // read as plain keys off the section rather than through get().
+        let markdownScope = workspace.getConfiguration("[markdown]", null);
+
+        this.options.tabSize = this.firstNumber(
+            [
+                editorOptions === undefined ? undefined : editorOptions.tabSize,
+                markdownScope["editor.tabSize"],
+                workspace.getConfiguration("editor", null).get("tabSize")
+            ],
+            this.options.DEFAULT_TAB_SIZE);
+
+        this.options.insertSpaces = this.firstBoolean(
+            [
+                editorOptions === undefined ? undefined : editorOptions.insertSpaces,
+                markdownScope["editor.insertSpaces"],
+                workspace.getConfiguration("editor", null).get("insertSpaces")
+            ],
+            this.options.DEFAULT_INSERT_SPACES);
+
+        // Assigned on both branches. Only the spaces branch used to write to
+        // `tab`, so once a spaces document had been opened the value stuck for
+        // the rest of the session and a tab-indented document was still
+        // indented with spaces.
+        this.options.tab = this.options.insertSpaces && this.options.tabSize > 0
+            ? " ".repeat(this.options.tabSize)
+            : "\t";
+    }
+
+    /**
+     * vscode types `TextEditorOptions.tabSize` as `number | string` and
+     * `insertSpaces` as `boolean | string` - "auto" is a legal value to write -
+     * and a language scoped setting holds whatever the user typed into their
+     * settings file. A candidate of the wrong type is not an answer, so the
+     * next source is asked instead of it being coerced into a nonsense value.
+     */
+    private firstNumber(candidates: unknown[], fallback: number): number {
+        for (let candidate of candidates) {
+            if (typeof candidate === 'number' && isFinite(candidate) && candidate > 0) {
+                return candidate;
+            }
+        }
+
+        return fallback;
+    }
+
+    private firstBoolean(candidates: unknown[], fallback: boolean): boolean {
+        for (let candidate of candidates) {
+            if (typeof candidate === 'boolean') {
+                return candidate;
+            }
+        }
+
+        return fallback;
     }
 
     /**

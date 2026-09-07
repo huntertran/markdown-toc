@@ -24,5 +24,5 @@ Apostrophes and question marks disappear from the slug entirely.
 
 ## Trailing spaces and (parentheses)
 
-cleanUpTitle strips the parentheses before either side sees the title, so both
-halves have to agree on the stripped form.
+The row keeps the parentheses (#69); only the slug drops them. Both halves
+have to agree on that same slug.

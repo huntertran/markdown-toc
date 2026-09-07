@@ -205,9 +205,9 @@ fixture runner — exits 0: **15 fixtures, 0 problems**, five unit groups passin
 | ~~**#50**~~ **FIXED** | It deletes stuff above the ToC | See §1.3 and §1.4. Guarded by `test/toc_comment_marker_test.md`. | Done |
 | ~~**#10**~~ **FIXED** | `orderedList=true`: TOC link has the number prefix, the anchor does not | See §4.1. Guarded by `test/anchor_slug_test.md` and the anchor tests in `runBehaviorTests.ts`. | Done |
 | ~~**#33**~~ **FIXED** | Extension not slugifying anchors properly | See §4.1. Guarded by `test/anchor_slug_test.md` and the anchor tests in `runBehaviorTests.ts`. | Done |
-| **#69** | Removes parentheses from section title | **Verified.** `### bar (info)` renders as `bar info`. `Header.cleanUpTitle` strips `(` and `)` unconditionally in its "special char" pass. | Small |
-| **#67** | Ignore image alt text in title | **Verified, and mangled.** `### Choosing a task [![Join chat](url)](url2)` becomes `Choosing a task ![Join chat]https://badges.gitter.im/x.svg`. `cleanUpTitle`'s link regex does not handle an image nested inside a link. | Small |
-| **#55** | Configured indent settings not respected | `Options.tab` is hardcoded to `'\t'` (`src/models/Options.ts:34`). `tabSize` and `insertSpaces` are read into options by `ConfigManager` and then never used by `generateTocRow`. The plumbing already exists. | Small |
+| ~~**#69**~~ **FIXED** | Removes parentheses from section title | `Header.cleanUpTitle` stripped `(` and `)` unconditionally in its "special char" pass. See §4.2. Guarded by `test/title_markup_test.md` and `parenthesesStayInTheTocRow` / `parenthesesDoNotEmptyATitle`. | Done |
+| ~~**#67**~~ **FIXED** | Ignore image alt text in title | `cleanUpTitle`'s link regex did not handle an image nested inside a link. See §4.2. Guarded by `test/title_markup_test.md` and `imageAltTextStaysOutOfTheTocRow`. | Done |
+| ~~**#55**~~ **FIXED** | Configured indent settings not respected | The earlier reading of this row was wrong: `generateTocRow` does use `options.tab`, and the settings path worked. The real cause is that the *open editor's* indentation was never asked. See §4.3. Guarded by `test/indent_test.md` and six tests in `runBehaviorTests.ts`. | Done |
 | **#7** | Not works with setext style headers | **Verified.** `Header 1` over `====` is invisible on the symbol-provider path. Needs a text-scan fallback. | Medium |
 | ~~**#53**~~ **FIXED** | Can we disable auto update TOC | The `updateOnSave` setting was not honoured until some other command ran — **see §5.1**. Answer and close. | Done |
 
@@ -251,6 +251,101 @@ against the old derivation, checked by restoring it in `anchorFor`.
 `test/expected/section_anchor_test.md` has been regenerated. It was §5.3: the
 broken link frozen into a snapshot. It now reads
 `name="2-wrong-number-with-a-stale-anchor"`, matching its row.
+
+### 4.2 #69 and #67 — one function, `Header.cleanUpTitle`
+
+Both are the title-cleanup pass mangling the row text. `cleanUpTitle` ran three
+substitutions, in this order: unwrap links, drop HTML comments, then strip
+`` #*` ``, `(` and `)` as "special chars".
+
+**#69** was the last of those. Parentheses are ordinary title text — nothing
+about them needs removing, and `anchor-markdown-header` already drops them when
+it builds the slug. So `### bar (info)` rendered as `bar info` while still
+linking to `#bar-info`. Only the `(` / `)` alternatives were removed from that
+pattern; the slug is unchanged, so links published against earlier versions
+still resolve.
+
+**#67** was the link rule, `/\[(.+)]\([^)]*\)/gi`. Against a badge — an image
+wrapped in a link, `[![alt](image)](href)` — the greedy `.+` ran to the *last*
+`](`, so the outer link was unwrapped into its own inner image, which then
+survived into the row with its alt text and, after the paren strip, its URL. Two
+changes:
+
+| Change | Why |
+|---|---|
+| Images are removed first: `/!\[[^\]]*\]\([^)]*\)/g` → `""` | An image renders as a picture and contributes no heading text, so its alt text is not part of the title. Running before the link rule turns `[![alt](image)](href)` into `[](href)`. |
+| The link rule is now `/\[([^\]]*)\]\([^)]*\)/g` | `[^\]]*` accepts the empty string, so the link the image rule just emptied disappears instead of surviving as a literal `[](href)`. It is also per-link rather than greedy across the line, which is what lets two links in one title each keep their own text. |
+
+One addition that follows from the first: removing an image from the middle of a
+title leaves the whitespace that surrounded it behind, so the result is passed
+through `/\s+/g → " "` before the existing `trim()`.
+
+`cleanUpTitle` is private and reached only from `tocRowWithAnchor`, so this
+touches the TOC row and the anchor derived from it — never the header line in
+the document, which keeps its badge.
+
+**Tests.** `test/title_markup_test.md` pins the shape end to end: the issues'
+own headings (`### bar (info)`, the Gitter badge), an image mid-title, two links
+in one title, and backticks next to parentheses. Four tests in
+`src/test/manual/runBehaviorTests.ts` state the invariants directly —
+`parenthesesStayInTheTocRow`, `parenthesesDoNotEmptyATitle`,
+`imageAltTextStaysOutOfTheTocRow`, `ordinaryLinksKeepTheirText`. The image test
+asserts against the TOC block alone, via the new `tocBlock` helper, because the
+heading it came from still contains the alt text and would otherwise satisfy a
+whole-document assertion.
+
+`test/expected/anchor_slug_test.md` was regenerated: its
+`## Trailing spaces and (parentheses)` row now reads
+`[1.4. Trailing spaces and (parentheses)](#14-trailing-spaces-and-parentheses)`.
+The anchor and the href are unchanged — this was §4.1's fixture recording the
+#69 behaviour as expected, the same way `section_anchor_test.md` recorded #10.
+Its prose was corrected to match. No other snapshot moved.
+
+### 4.3 #55 — the settings were read, the editor was not
+
+**The row above had the wrong cause.** `generateTocRow` does use
+`options.tab` (`src/AutoMarkdownToc.ts:349`), and `ConfigManager` did turn
+`insertSpaces` + `tabSize` into it. Driving the harness with
+`editor.tabSize: 2` produced a correctly indented TOC. So the settings path was
+never the broken half.
+
+The reporter says it exactly: *"the default indent size is taken into account,
+and not the current indent size"*, with a screenshot of the status bar reading
+**Spaces: 2** — and they are using the EditorConfig extension. Neither
+EditorConfig nor `editor.detectIndentation` (which is **on by default**, and
+infers the width from the file's own content) writes to the settings. Both set
+the open editor's own `TextEditor.options`. That is what the status bar reports
+and what a user means by their indent setting, and `ConfigManager` never looked
+at it.
+
+| Change | |
+|---|---|
+| `ConfigManager.loadIndentation()` | New. Resolves `tabSize` and `insertSpaces` from the first source that gives a usable answer: **the active editor's `options`**, then `"[markdown]": { "editor.*" }`, then `editor.*`, then a default. The two existing settings lookups are unchanged, only demoted. |
+| `firstNumber` / `firstBoolean` | vscode types `TextEditorOptions.tabSize` as `number \| string` and `insertSpaces` as `boolean \| string` — `"auto"` is a legal value — and a scoped setting holds whatever the user typed. A candidate of the wrong type is skipped so the next source answers, rather than being coerced into a nonsense width. |
+| `options.tab` | Now assigned on **both** branches. Only the spaces branch ever wrote to it, so once any spaces-indented document had been opened the value stuck for the rest of the session and a tab-indented document was still indented with spaces. Same shape as the `uniqueValue` leak in §5.2. |
+| `Options` | `DEFAULT_TAB_SIZE = 4` / `DEFAULT_INSERT_SPACES = true` — vscode's own defaults, so the last-resort fallback matches what the editor itself would insert. `tabSize`/`insertSpaces` previously initialised to `2`/`false`, which was neither vscode's default nor ever reachable in practice. |
+
+`src/test/manual/vscodeStub.ts` grew a `TextEditor.options`, empty by default,
+so a test that does not set it falls back to `configuration` the way a real
+editor falls back to the settings — which is why no existing fixture moved.
+
+**Tests.** `test/indent_test.md` is a four-level document that pins the
+settings-fallback path in a snapshot. Six tests in `runBehaviorTests.ts` cover
+the rest, asserting on the indent string in front of each row:
+
+| Test | Asserts | Red without the fix |
+|---|---|---|
+| `editorIndentationWinsOverTheSettings` | Editor says 2 spaces, settings say 4 → two spaces per level. **This is #55.** | Yes |
+| `tabIndentationIsHonoured` | Editor says `insertSpaces:false` → one literal tab per level. | Yes |
+| `indentationDoesNotStickAcrossDocuments` | One extension instance, a 2-space document then a tab document → the second is tabs. | Yes |
+| `missingIndentationFallsBackToTheVscodeDefault` | Nothing set anywhere → four spaces. | Yes |
+| `markdownScopedIndentationIsUsed` | `"[markdown]": { "editor.tabSize": 3 }` → three spaces. | No — pins the path that already worked |
+| `unusableEditorIndentationFallsThrough` | Editor options of `"auto"` → the configured width. | No — same |
+
+The last two pass against the pre-fix code on purpose, the way
+`perDocumentOptionsSurviveRepeatedRuns` does: they guard the behaviour the fix
+had to leave alone. Verified by `git stash push` limited to `ConfigManager.ts`
+and `Options.ts`; the fixture suite is unchanged either way.
 
 ---
 
@@ -330,16 +425,41 @@ committed state afterwards.
 | #59 | `test/section_number_test.md` | Covered. |
 | #68 (crash path) | `test/code_block_at_end_test.md` | Covered, and genuinely enforced — `vscodeStub.lineAt` throws on an out-of-range index (`src/test/manual/vscodeStub.ts:135`) and the runner turns that into a failure and a non-zero exit code. |
 | anchors preserved when `insertAnchor:false` | `test/anchor_preserved_test.md` | **Added by this triage.** Both pre-existing anchor fixtures set `insertAnchor:true`, so the preserve-anchors branch had no guard at all — reverting the `if (INSERT_ANCHOR.value)` gate left the suite green. Verified the new fixture fails when that gate is reverted. |
+| #69, #67 | `test/title_markup_test.md` | **Added by §4.2.** Parentheses, a linked badge, a mid-title image, two links in one title. |
+| #55 | `test/indent_test.md` | **Added by §4.3.** Four nesting levels on the settings-fallback path; the editor-driven cases are behaviour tests. |
 
-Suite currently: **12 fixtures, 0 problems.**
+Suite currently: **18 fixtures, 0 problems**, five unit groups and **19
+behaviour tests** passing.
 
-### Wrong issue number in the fixtures
+### ~~Wrong issue number in the fixtures~~ — the note was wrong, nothing to correct
 
-`test/code_block_at_end_test.md` and its snapshot cite "issue #56" four times,
-and both `c623a83` and `a687d4b` say "Fixes #56". That number belongs to the
-**archived upstream** repo, where #56 is an unrelated issue about hyperlinks in
-headings. On this repo the crash corresponds to **#68**. Correct the fixture
-prose and the CHANGELOG.
+> This section previously claimed that `#56` belonged to the archived upstream
+> repo and that the crash should be attributed to **#68**. **Both halves are
+> false.** It is left here, corrected, because it was an action item in §8.
+
+`huntertran/markdown-toc#56` exists and is exactly the right issue:
+**"Cannot generate ToC, Illegal value for `line`"**, reported by J-Siu, now
+**closed**, with the owner commenting *"Version 3.1.0 should fix this issue"*.
+So every citation is already correct and none of them was touched:
+
+| Cites `#56` | |
+|---|---|
+| `test/code_block_at_end_test.md` and its snapshot | Correct |
+| `src/test/runTest.ts` (three comments), `src/test/manual/vscodeStub.ts:134` | Correct |
+| `plan/manual-fixture-fix-plan.md:35` | Correct |
+| `CHANGELOG.md:19`, linking `huntertran/markdown-toc/issues/56` | Correct |
+| `c623a83` / PR #74, and `a687d4b` | Correct |
+
+Where the confusion came from: the archived `alanwalk/markdown-toc` **also** has
+a #56, an unrelated question about hyperlinks in headings, and `gh` resolves to
+that remote by default in a fresh clone (see the repo note at the top). Reading
+the upstream issue and assuming it was the one being cited is what produced the
+claim.
+
+**#68 is a different, still-open issue** ("Extension does nothing on
+Insert/Update", §2). The `Illegal value for 'line'` crash is one of two
+candidate causes for it, which is why the two are related — but #68 is not the
+crash report and must not be swapped in for #56.
 
 ---
 
@@ -366,12 +486,17 @@ prose and the CHANGELOG.
    probably #41. Guarded by `src/test/manual/runBehaviorTests.ts`.
 5. ~~**Fix #10 and #33 together**~~ — done (§4.1). One anchor-derivation change;
    `test/expected/section_anchor_test.md` regenerated.
-6. **Batch the title-cleanup bugs**: #69 (parentheses) and #67 (image alt text),
-   both in `Header.cleanUpTitle`.
-7. **Fix #55** — use the `tabSize` / `insertSpaces` options already being read.
+6. ~~**Batch the title-cleanup bugs**: #69 (parentheses) and #67 (image alt
+   text), both in `Header.cleanUpTitle`.~~ — done (§4.2). Guarded by
+   `test/title_markup_test.md` and four tests in `runBehaviorTests.ts`.
+7. ~~**Fix #55** — use the `tabSize` / `insertSpaces` options already being
+   read.~~ — done (§4.3), though not for the reason this line assumed: the
+   settings were already being used, the open editor's own indentation was not.
 8. **Close §2 and §3** (seven issues) with a note naming the version that fixed
    each.
-9. **Correct the `#56` attribution** in the fixtures and CHANGELOG (§6).
+9. ~~**Correct the `#56` attribution** in the fixtures and CHANGELOG (§6).~~ —
+   **withdrawn.** The attribution was already correct; the triage note was not.
+   See §6. No fixture, comment or CHANGELOG line was changed.
 
 Every fix should land with a fixture in `test/` plus a snapshot in
 `test/expected/`, following the pattern `a687d4b` established.
