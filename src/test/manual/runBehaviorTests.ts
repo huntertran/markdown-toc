@@ -384,6 +384,45 @@ async function anchorsFollowDetectedNumbering(): Promise<void> {
     console.log('  detected numbering reaches the anchors as well');
 }
 
+async function manualNumberingSurvivesWithoutAutoSections(): Promise<void> {
+    let settings = configuration['markdown-toc'];
+    let previousSettings = Object.assign({}, settings);
+    let headings = ['## 7. Manual section', '### 7.3 Child', '### Unnumbered', '### 7.9. Later child', '## Appendix'];
+    let titles = ['7. Manual section', '7.3 Child', 'Unnumbered', '7.9. Later child', 'Appendix'];
+    let targets = ['7-manual-section', '73-child', 'unnumbered', '79-later-child', 'appendix'];
+
+    try {
+        for (let orderedList of [false, true]) {
+            for (let insertAnchor of [false, true]) {
+                for (let withLinks of [false, true]) {
+                    Object.assign(settings, { detectAndAutoSetSection: false, orderedList, insertAnchor, withLinks, depthFrom: 2 });
+                    let doc = open('manual_numbering.md', ['<!-- TOC -->', '', '<!-- /TOC -->', '', ...headings]);
+                    let extension = new AutoMarkdownToc();
+
+                    await extension.updateMarkdownToc();
+
+                    let text = doc.getText();
+                    let toc = tocBlock(text);
+                    assert.deepStrictEqual(text.split(EOL).filter(line => /^#/.test(line)), headings, 'manual headings must not change');
+                    assert.deepStrictEqual(tocLinkTargets(toc), withLinks ? targets : [], 'links must use existing section numbers');
+                    assert.deepStrictEqual(anchorNames(text), insertAnchor ? targets : [], 'anchors must use the same manual titles');
+                    for (let [index, title] of titles.entries()) {
+                        assert.ok(toc.includes(withLinks ? '[' + title + '](#' + targets[index] + ')' : '- ' + title), 'TOC must preserve ' + title);
+                    }
+
+                    await extension.updateMarkdownToc();
+                    assert.strictEqual(doc.getText(), text, 'repeated updates must be stable');
+                }
+            }
+        }
+    } finally {
+        Object.assign(settings, previousSettings);
+    }
+
+    console.log('  manual numbering survives with automatic sections disabled');
+}
+
+
 /**
  * With unicodeAnchors on, the row keeps literal Unicode in its href. The anchor
  * has to keep the same literal form, not a percent-encoded one.
@@ -821,6 +860,7 @@ async function main(): Promise<void> {
         anchorsMatchTheirTocLinks,
         anchorsMatchUnorderedTocLinks,
         anchorsFollowDetectedNumbering,
+        manualNumberingSurvivesWithoutAutoSections,
         unicodeAnchorsStillMatch,
         parenthesesStayInTheTocRow,
         parenthesesDoNotEmptyATitle,
