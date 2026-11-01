@@ -292,6 +292,14 @@ export class AutoMarkdownToc {
                 let startPosition = this.getStartPositionOfAnchorLine(index, doc);
 
                 let range = new Range(startPosition, new Position(startPosition.line + 1, 0));
+
+                // An anchor on the last line has no line break after it, so the
+                // one before it has to go instead. Otherwise every update leaves
+                // the header one empty line longer.
+                if (index === doc.lineCount - 1 && index > 0) {
+                    range = new Range(new Position(index - 1, doc.lineAt(index - 1).text.length), new Position(index, lineText.length));
+                }
+
                 editBuilder.delete(range);
             }
         }

@@ -239,6 +239,12 @@ class AutoMarkdownToc {
                 }
                 let startPosition = this.getStartPositionOfAnchorLine(index, doc);
                 let range = new vscode_1.Range(startPosition, new vscode_1.Position(startPosition.line + 1, 0));
+                // An anchor on the last line has no line break after it, so the
+                // one before it has to go instead. Otherwise every update leaves
+                // the header one empty line longer.
+                if (index === doc.lineCount - 1 && index > 0) {
+                    range = new vscode_1.Range(new vscode_1.Position(index - 1, doc.lineAt(index - 1).text.length), new vscode_1.Position(index, lineText.length));
+                }
                 editBuilder.delete(range);
             }
         }
@@ -290,6 +296,11 @@ class AutoMarkdownToc {
         return row.join('');
     }
     getTocString(header, useOrderedToc) {
+        // Disabling automatic sections preserves manual numbering, not just the heading lines.
+        if (this.configManager.options.DETECT_AUTO_SET_SECTION.value === false
+            && this.configManager.options.isOrderedListDetected) {
+            return (header.detectedOrderString ? header.detectedOrderString + ' ' : '') + header.tocWithoutOrder;
+        }
         if (useOrderedToc) {
             return header.tocWithOrder;
         }

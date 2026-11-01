@@ -424,6 +424,33 @@ async function manualNumberingSurvivesWithoutAutoSections(): Promise<void> {
 
 
 /**
+ * The anchor of a header on the document's last line ends the document, with
+ * no line break after it. Replacing it must not leave the break before it
+ * behind, or each update adds another one.
+ */
+async function anchorOnTheLastLineIsStable(): Promise<void> {
+    let extension = new AutoMarkdownToc();
+    let doc = open('anchor_last_line.md', [
+        '<!-- TOC insertAnchor:true -->',
+        '',
+        '<!-- /TOC -->',
+        '',
+        '# First',
+        '',
+        '## Last'
+    ]);
+
+    await extension.updateMarkdownToc();
+    let text = doc.getText();
+    assert.ok(text.endsWith('## Last' + EOL + '<a id="markdown-last" name="last"></a>'), 'anchor goes right under the last header');
+
+    await extension.updateMarkdownToc();
+    assert.strictEqual(doc.getText(), text, 'repeated updates must be stable');
+
+    console.log('  an anchor on the last line does not grow the document');
+}
+
+/**
  * With unicodeAnchors on, the row keeps literal Unicode in its href. The anchor
  * has to keep the same literal form, not a percent-encoded one.
  */
@@ -861,6 +888,7 @@ async function main(): Promise<void> {
         anchorsMatchUnorderedTocLinks,
         anchorsFollowDetectedNumbering,
         manualNumberingSurvivesWithoutAutoSections,
+        anchorOnTheLastLineIsStable,
         unicodeAnchorsStillMatch,
         parenthesesStayInTheTocRow,
         parenthesesDoNotEmptyATitle,
