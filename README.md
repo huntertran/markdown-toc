@@ -85,6 +85,8 @@ Only tags this extension generated are touched, that is lines matching `<a id="m
 
 A document that already numbers its headers keeps them correct on its own: with `detectAndAutoSetSection:true` (the default) every TOC update renumbers the headers and writes numbered TOC rows, so inserting or deleting a section does not leave the rest of the document stale. Documents that do not number their headers are left alone, and can still get numbered rows in the TOC only by setting `orderedList:true`.
 
+With `detectAndAutoSetSection:false` the numbers you wrote are left exactly as they are, and the TOC rows repeat them (`## 7. Manual section` becomes `- [7. Manual section](#7-manual-section)`), so each row still links to its heading.
+
 # 4. Configuration
 <a id="markdown-configuration" name="configuration"></a>
 

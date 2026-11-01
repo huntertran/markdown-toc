@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [3.1.3] - 2026-11-01
+### Fixed:
+- [#75](https://github.com/huntertran/markdown-toc/pull/75): with `detectAndAutoSetSection:false`, a header numbered by hand (`## 7. Manual section`) lost its number in the TOC, so the row linked to `#manual-section` while the heading's real slug is `#7-manual-section`. With `orderedList:true` the row took a recomputed number instead (`1. Manual section`), which matched neither the heading nor its slug. TOC rows, links and inserted anchors now keep the number the header was written with
+- With `insertAnchor:true`, a header on the last line of a document gained an extra blank line under it on every update. Removing the old anchor left the line break before it behind, because an anchor on the last line has no line break after it
+
 ## [3.1.2] - 2026-09-07
 ### Fixed:
 - [#72](https://github.com/huntertran/markdown-toc/issues/72): an unclosed `<!-- TOC -->` earlier in the document - such as the `<!-- TOC -->` / `<!--\TOC-->` pair suggested as a workaround in [#40](https://github.com/huntertran/markdown-toc/issues/40) - was taken as the start of the TOC block, so Insert/Update replaced everything down to the real block's `<!-- /TOC -->` and deleted the headers in between. The last start marker before the stop marker now wins, and a stray `<!-- /TOC -->` above the block no longer ends the scan
