@@ -363,6 +363,12 @@ export class AutoMarkdownToc {
     }
 
     private getTocString(header: Header, useOrderedToc: boolean) {
+        // Disabling automatic sections preserves manual numbering, not just the heading lines.
+        if (this.configManager.options.DETECT_AUTO_SET_SECTION.value === false
+            && this.configManager.options.isOrderedListDetected) {
+            return (header.detectedOrderString ? header.detectedOrderString + ' ' : '') + header.tocWithoutOrder;
+        }
+
         if (useOrderedToc) {
             return header.tocWithOrder;
         } else {
